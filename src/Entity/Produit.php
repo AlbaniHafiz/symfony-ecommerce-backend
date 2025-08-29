@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ProduitRepository::class)]
 #[ORM\Table(name: 'produit')]
@@ -16,35 +17,43 @@ class Produit
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['produit:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 150)]
     #[Assert\NotBlank(message: 'Le nom du produit est obligatoire.')]
     #[Assert\Length(max: 150, maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.')]
+    #[Groups(['produit:read'])]
     private ?string $nom = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['produit:read', 'produit:detail'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     #[Assert\NotBlank(message: 'Le prix est obligatoire.')]
     #[Assert\PositiveOrZero(message: 'Le prix doit être positif.')]
+    #[Groups(['produit:read'])]
     private ?string $prix = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['produit:read'])]
     private ?string $image = null;
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'Le stock est obligatoire.')]
     #[Assert\PositiveOrZero(message: 'Le stock doit être positif ou nul.')]
+    #[Groups(['produit:read'])]
     private ?int $stock = 0;
 
     #[ORM\ManyToOne(inversedBy: 'produits')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull(message: 'La catégorie est obligatoire.')]
+    #[Groups(['produit:read'])]
     private ?Categorie $categorie = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['produit:detail'])]
     private ?\DateTimeInterface $dateCreation = null;
 
     #[ORM\Column]

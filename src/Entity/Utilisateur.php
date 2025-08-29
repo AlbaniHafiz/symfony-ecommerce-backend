@@ -11,6 +11,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
 #[ORM\Table(name: 'utilisateur')]
@@ -20,21 +21,25 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.')]
+    #[Groups(['user:read'])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.')]
+    #[Groups(['user:read'])]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank(message: 'L\'email est obligatoire.')]
     #[Assert\Email(message: 'L\'email doit être valide.')]
+    #[Groups(['user:read'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 20)]
@@ -43,6 +48,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         pattern: '/^[0-9+\-\s\(\)]+$/',
         message: 'Le numéro de téléphone n\'est pas valide.'
     )]
+    #[Groups(['user:read'])]
     private ?string $telephone = null;
 
     #[ORM\Column]
@@ -52,12 +58,15 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = ['ROLE_ETUDIANT'];
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['user:read'])]
     private ?string $adresse = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['user:read'])]
     private ?\DateTimeInterface $dateCreation = null;
 
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private bool $actif = true;
 
     #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: Commande::class)]

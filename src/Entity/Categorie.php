@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CategorieRepository::class)]
 #[ORM\Table(name: 'categorie')]
@@ -16,17 +17,21 @@ class Categorie
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['categorie:read', 'produit:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank(message: 'Le nom de la catégorie est obligatoire.')]
     #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.')]
+    #[Groups(['categorie:read', 'produit:read'])]
     private ?string $nom = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['categorie:read'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['categorie:read'])]
     private ?string $image = null;
 
     #[ORM\Column]

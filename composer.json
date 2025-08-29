@@ -20,6 +20,7 @@
     },
     "require-dev": {
         "doctrine/annotations": "*",
+        "doctrine/doctrine-fixtures-bundle": "*",
         "lexik/jwt-authentication-bundle": "*",
         "symfony/form": "7.3.*",
         "symfony/maker-bundle": "*",

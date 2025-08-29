@@ -7,6 +7,10 @@ framework:
     
     # Enable property accessor for forms
     property_access: true
+    
+    # Enable serializer
+    serializer:
+        enabled: true
 
     #esi: true
     #fragments: true
