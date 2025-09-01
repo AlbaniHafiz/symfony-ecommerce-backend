@@ -1,0 +1,329 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ isEdit ? 'Modifier' : 'Nouveau' }} Produit{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-0">
+            <i class="bi bi-{{ isEdit ? 'pencil' : 'plus-circle' }} me-2"></i>
+            {{ isEdit ? 'Modifier le Produit' : 'Nouveau Produit' }}
+        </h1>
+        <p class="text-muted mb-0">
+            {{ isEdit ? 'Modifiez les informations du produit' : 'Ajoutez un nouveau produit à votre catalogue' }}
+        </p>
+    </div>
+    <a href="{{ path('admin_produits_index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Informations du Produit
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="productForm">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="nom" class="form-label">
+                                Nom du produit <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="nom" name="nom" 
+                                   value="{{ formData.nom ?? produit.nom }}" required>
+                            <div class="form-text">Nom commercial du produit tel qu'il apparaîtra aux clients</div>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" 
+                                      rows="4" placeholder="Description détaillée du produit...">{{ formData.description ?? produit.description }}</textarea>
+                            <div class="form-text">Description détaillée visible sur la fiche produit</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="prix" class="form-label">
+                                Prix (FCFA) <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="prix" name="prix" 
+                                       value="{{ formData.prix ?? produit.prix }}" step="0.01" min="0" required>
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="stock" class="form-label">
+                                Stock <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="stock" name="stock" 
+                                   value="{{ formData.stock ?? produit.stock }}" min="0" required>
+                            <div class="form-text">Quantité disponible en stock</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="categorieId" class="form-label">
+                                Catégorie <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="categorieId" name="categorieId" required>
+                                <option value="">Choisir une catégorie</option>
+                                {% for categorie in categories %}
+                                    <option value="{{ categorie.id }}" 
+                                            {{ (formData.categorieId ?? produit.categorie.id) == categorie.id ? 'selected' : '' }}>
+                                        {{ categorie.nom }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="image" class="form-label">Image du produit</label>
+                            <input type="file" class="form-control" id="image" name="image" 
+                                   accept="image/*" onchange="previewImage(this)">
+                            <div class="form-text">JPG, PNG ou GIF. Taille maximale: 5MB</div>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="actif" name="actif" 
+                                       {{ (formData.actif is defined ? formData.actif : produit.actif) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="actif">
+                                    Produit actif
+                                </label>
+                                <div class="form-text">Les produits inactifs ne sont pas visibles aux clients</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ path('admin_produits_index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-2"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="bi bi-check-circle me-2"></i>
+                            {{ isEdit ? 'Modifier le Produit' : 'Créer le Produit' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Aperçu de l'image -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-image me-2"></i>Aperçu de l'image
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div id="imagePreview" class="border rounded p-4" style="min-height: 200px;">
+                    {% if produit.image %}
+                        <img src="{{ asset('uploads/products/' ~ produit.image) }}" 
+                             alt="{{ produit.nom }}" class="img-fluid rounded" 
+                             style="max-height: 180px;">
+                    {% else %}
+                        <div class="text-muted">
+                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                            <p class="mt-2 mb-0">Aucune image</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conseils -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Conseils
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Utilisez des noms courts et descriptifs</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Ajoutez une description détaillée</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Choisissez des images de qualité</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Mettez à jour le stock régulièrement</small>
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        <small>Définissez des prix compétitifs</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if isEdit and produit.id %}
+    <!-- Statistiques du produit -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-bar-chart me-2"></i>Statistiques du Produit
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-primary mb-1">{{ produit.articlesCommande|length }}</div>
+                        <small class="text-muted">Commandes</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-success mb-1">
+                            {% set totalVendu = 0 %}
+                            {% for article in produit.articlesCommande %}
+                                {% set totalVendu = totalVendu + article.quantite %}
+                            {% endfor %}
+                            {{ totalVendu }}
+                        </div>
+                        <small class="text-muted">Unités vendues</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-info mb-1">{{ produit.stock }}</div>
+                        <small class="text-muted">En stock</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-warning mb-1">
+                            {% set chiffreAffaires = 0 %}
+                            {% for article in produit.articlesCommande %}
+                                {% set chiffreAffaires = chiffreAffaires + (article.quantite * article.prixUnitaire) %}
+                            {% endfor %}
+                            {{ chiffreAffaires|number_format(0, ',', ' ') }}
+                        </div>
+                        <small class="text-muted">CA (FCFA)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Preview de l'image
+        function previewImage(input) {
+            const preview = document.getElementById('imagePreview');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" class="img-fluid rounded" 
+                             style="max-height: 180px;" alt="Aperçu">
+                    `;
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Validation du formulaire
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const nom = document.getElementById('nom').value.trim();
+            const prix = document.getElementById('prix').value;
+            const stock = document.getElementById('stock').value;
+            const categorie = document.getElementById('categorieId').value;
+            
+            // Validation basique
+            if (!nom || !prix || !stock || !categorie) {
+                e.preventDefault();
+                showAlert('Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+            
+            if (parseFloat(prix) < 0) {
+                e.preventDefault();
+                showAlert('Le prix doit être positif', 'error');
+                return;
+            }
+            
+            if (parseInt(stock) < 0) {
+                e.preventDefault();
+                showAlert('Le stock doit être positif ou nul', 'error');
+                return;
+            }
+            
+            // Animation du bouton
+            submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Sauvegarde...';
+            submitBtn.disabled = true;
+        });
+
+        // Calcul automatique des métriques
+        document.addEventListener('DOMContentLoaded', function() {
+            const prixInput = document.getElementById('prix');
+            const stockInput = document.getElementById('stock');
+            
+            function updateCalculations() {
+                const prix = parseFloat(prixInput.value) || 0;
+                const stock = parseInt(stockInput.value) || 0;
+                const valeurStock = prix * stock;
+                
+                // Afficher la valeur du stock si les champs sont remplis
+                if (prix > 0 && stock > 0) {
+                    const info = document.createElement('div');
+                    info.className = 'mt-2 p-2 bg-light rounded';
+                    info.innerHTML = `<small class="text-muted">Valeur du stock: <strong>${valeurStock.toLocaleString()} FCFA</strong></small>`;
+                    
+                    // Remplacer l'ancien info s'il existe
+                    const existingInfo = stockInput.parentElement.querySelector('.bg-light');
+                    if (existingInfo) {
+                        existingInfo.remove();
+                    }
+                    stockInput.parentElement.appendChild(info);
+                }
+            }
+            
+            prixInput.addEventListener('input', updateCalculations);
+            stockInput.addEventListener('input', updateCalculations);
+            
+            // Calcul initial
+            updateCalculations();
+        });
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const form = document.getElementById('productForm');
+            form.parentElement.insertBefore(alertDiv, form);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+{% endblock %}

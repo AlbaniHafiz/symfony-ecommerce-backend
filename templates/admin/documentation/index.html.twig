@@ -1,0 +1,359 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Documentation Utilisateur{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-0">
+            <i class="bi bi-book me-2"></i>Documentation Utilisateur
+        </h1>
+        <p class="text-muted mb-0">Guide d'utilisation de l'interface d'administration</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Navigation de la documentation -->
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>Table des Matières
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="#overview" class="list-group-item list-group-item-action">
+                        <i class="bi bi-house me-2"></i>Vue d'ensemble
+                    </a>
+                    <a href="#dashboard" class="list-group-item list-group-item-action">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </a>
+                    <a href="#products" class="list-group-item list-group-item-action">
+                        <i class="bi bi-box-seam me-2"></i>Gestion des Produits
+                    </a>
+                    <a href="#orders" class="list-group-item list-group-item-action">
+                        <i class="bi bi-cart-check me-2"></i>Gestion des Commandes
+                    </a>
+                    <a href="#users" class="list-group-item list-group-item-action">
+                        <i class="bi bi-people me-2"></i>Gestion des Utilisateurs
+                    </a>
+                    <a href="#database" class="list-group-item list-group-item-action">
+                        <i class="bi bi-database me-2"></i>Base de Données
+                    </a>
+                    <a href="#troubleshooting" class="list-group-item list-group-item-action">
+                        <i class="bi bi-tools me-2"></i>Dépannage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu de la documentation -->
+    <div class="col-lg-9">
+        <!-- Vue d'ensemble -->
+        <div class="card mb-4" id="overview">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-house me-2"></i>Vue d'ensemble
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>Bienvenue dans l'interface d'administration de votre e-commerce étudiant ! Cette interface moderne vous permet de gérer facilement tous les aspects de votre boutique en ligne.</p>
+                
+                <h5>Fonctionnalités principales :</h5>
+                <ul>
+                    <li><strong>Dashboard interactif</strong> avec statistiques en temps réel</li>
+                    <li><strong>Gestion des produits</strong> avec filtres avancés</li>
+                    <li><strong>Suivi des commandes</strong> et des livraisons</li>
+                    <li><strong>Administration des utilisateurs</strong> (étudiants, livreurs)</li>
+                    <li><strong>Interface responsive</strong> compatible mobile et tablette</li>
+                </ul>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Astuce :</strong> Utilisez la navigation supérieure pour accéder rapidement aux différentes sections.
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="card mb-4" id="dashboard">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </h4>
+            </div>
+            <div class="card-body">
+                <p>Le dashboard vous donne une vue d'ensemble de votre activité :</p>
+                
+                <h5>Statistiques affichées :</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Étudiants inscrits</strong> - Nombre total d'utilisateurs</li>
+                            <li><strong>Chiffre d'affaires du mois</strong> - Revenus actuels</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Commandes aujourd'hui</strong> - Activité journalière</li>
+                            <li><strong>Produits actifs</strong> - Catalogue disponible</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h5>Widgets disponibles :</h5>
+                <ul>
+                    <li><strong>Commandes récentes</strong> - Les 10 dernières commandes</li>
+                    <li><strong>Statuts des commandes</strong> - Répartition par statut</li>
+                    <li><strong>Alertes de stock</strong> - Produits en rupture</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Gestion des Produits -->
+        <div class="card mb-4" id="products">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-box-seam me-2"></i>Gestion des Produits
+                </h4>
+            </div>
+            <div class="card-body">
+                <h5>Fonctionnalités disponibles :</h5>
+                
+                <h6><i class="bi bi-plus-circle me-2"></i>Ajouter un produit :</h6>
+                <ol>
+                    <li>Cliquez sur "Nouveau Produit"</li>
+                    <li>Remplissez les informations obligatoires (nom, prix, stock, catégorie)</li>
+                    <li>Ajoutez une description détaillée</li>
+                    <li>Uploadez une image (optionnel)</li>
+                    <li>Définissez le statut (actif/inactif)</li>
+                </ol>
+
+                <h6><i class="bi bi-funnel me-2"></i>Filtrer les produits :</h6>
+                <ul>
+                    <li><strong>Recherche textuelle</strong> : Par nom ou description</li>
+                    <li><strong>Filtrage par catégorie</strong> : Sélectionnez une catégorie spécifique</li>
+                    <li><strong>Filtrage par statut</strong> : Actifs, inactifs, ou en rupture</li>
+                </ul>
+
+                <h6><i class="bi bi-toggles me-2"></i>Actions rapides :</h6>
+                <ul>
+                    <li><strong>Toggle statut</strong> : Activez/désactivez un produit d'un clic</li>
+                    <li><strong>Modifier</strong> : Éditez les informations du produit</li>
+                    <li><strong>Supprimer</strong> : Retirez un produit du catalogue</li>
+                </ul>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Attention :</strong> La suppression d'un produit ayant des commandes associées peut affecter l'historique.
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestion des Commandes -->
+        <div class="card mb-4" id="orders">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-cart-check me-2"></i>Gestion des Commandes
+                </h4>
+            </div>
+            <div class="card-body">
+                <h5>Statuts des commandes :</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><span class="badge bg-warning">EN_ATTENTE</span> - Commande reçue</li>
+                            <li><span class="badge bg-info">CONFIRMEE</span> - Commande validée</li>
+                            <li><span class="badge bg-primary">EN_PREPARATION</span> - En cours de préparation</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><span class="badge bg-warning">EN_LIVRAISON</span> - En cours de livraison</li>
+                            <li><span class="badge bg-success">LIVREE</span> - Commande livrée</li>
+                            <li><span class="badge bg-danger">ANNULEE</span> - Commande annulée</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h5>Actions disponibles :</h5>
+                <ul>
+                    <li>Modifier le statut d'une commande</li>
+                    <li>Attribuer une commande à un livreur</li>
+                    <li>Voir les détails et articles commandés</li>
+                    <li>Gérer les paiements associés</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Gestion des Utilisateurs -->
+        <div class="card mb-4" id="users">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-people me-2"></i>Gestion des Utilisateurs
+                </h4>
+            </div>
+            <div class="card-body">
+                <h5>Types d'utilisateurs :</h5>
+                <ul>
+                    <li><strong>ETUDIANT</strong> - Clients de la boutique</li>
+                    <li><strong>LIVREUR</strong> - Personnel de livraison</li>
+                    <li><strong>ADMIN</strong> - Administrateurs de la plateforme</li>
+                </ul>
+
+                <h5>Fonctionnalités :</h5>
+                <ul>
+                    <li>Consulter la liste des utilisateurs</li>
+                    <li>Filtrer par rôle et statut</li>
+                    <li>Activer/désactiver des comptes</li>
+                    <li>Voir l'historique des commandes</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Base de Données -->
+        <div class="card mb-4" id="database">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-database me-2"></i>Base de Données et PHPMyAdmin
+                </h4>
+            </div>
+            <div class="card-body">
+                <h5>Configuration MySQL :</h5>
+                <p>Le projet est configuré pour utiliser MySQL comme base de données principale avec PHPMyAdmin pour l'administration.</p>
+
+                <h6>Accès PHPMyAdmin :</h6>
+                <div class="alert alert-info">
+                    <i class="bi bi-server me-2"></i>
+                    <strong>URL :</strong> <a href="http://localhost:8081" target="_blank">http://localhost:8081</a><br>
+                    <strong>Utilisateur :</strong> root<br>
+                    <strong>Mot de passe :</strong> root_password<br>
+                    <strong>Base de données :</strong> ecommerce_etudiant
+                </div>
+
+                <h6>Démarrage avec Docker :</h6>
+                <pre class="bg-light p-3 rounded"><code># Démarrer tous les services
+docker-compose up -d
+
+# Accéder à l'application
+http://localhost:8080
+
+# Accéder à PHPMyAdmin
+http://localhost:8081</code></pre>
+
+                <h6>Configuration manuelle (sans Docker) :</h6>
+                <ol>
+                    <li>Installez MySQL 8.0</li>
+                    <li>Créez la base de données <code>ecommerce_etudiant</code></li>
+                    <li>Configurez les variables dans <code>.env</code></li>
+                    <li>Exécutez les migrations : <code>php bin/console doctrine:migrations:migrate</code></li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Dépannage -->
+        <div class="card mb-4" id="troubleshooting">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>Dépannage
+                </h4>
+            </div>
+            <div class="card-body">
+                <h5>Problèmes courants :</h5>
+
+                <h6>Erreur de connexion à la base de données :</h6>
+                <ul>
+                    <li>Vérifiez que MySQL est démarré</li>
+                    <li>Contrôlez les paramètres dans <code>.env</code></li>
+                    <li>Assurez-vous que la base de données existe</li>
+                </ul>
+
+                <h6>Interface non accessible :</h6>
+                <ul>
+                    <li>Vérifiez que le serveur web est démarré</li>
+                    <li>Contrôlez les permissions des fichiers</li>
+                    <li>Videz le cache Symfony : <code>php bin/console cache:clear</code></li>
+                </ul>
+
+                <h6>Problèmes de permissions :</h6>
+                <ul>
+                    <li>Vérifiez les droits d'écriture sur <code>var/</code></li>
+                    <li>Assurez-vous que PHP a accès aux dossiers nécessaires</li>
+                </ul>
+
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <strong>Support :</strong> Pour toute question, consultez la documentation technique ou ouvrez une issue sur GitHub.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.list-group-item.list-group-item-action:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-color: var(--admin-primary);
+}
+
+.list-group-item.list-group-item-action.active {
+    background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+    border-color: var(--admin-primary);
+}
+
+pre {
+    font-size: 0.9rem;
+}
+
+.badge {
+    font-size: 0.8rem;
+}
+</style>
+
+<script>
+// Smooth scrolling for internal links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+            
+            // Update active state
+            document.querySelectorAll('.list-group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            this.classList.add('active');
+        }
+    });
+});
+
+// Highlight current section on scroll
+window.addEventListener('scroll', function() {
+    const sections = document.querySelectorAll('.card[id]');
+    const navLinks = document.querySelectorAll('.list-group-item[href^="#"]');
+    
+    let current = '';
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (pageYOffset >= sectionTop - 200) {
+            current = section.getAttribute('id');
+        }
+    });
+    
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+            link.classList.add('active');
+        }
+    });
+});
+</script>
+
+{% endblock %}

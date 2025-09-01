@@ -43,6 +43,24 @@ services:
     networks:
       - ecommerce
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: symfony_ecommerce_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root_password
+      MYSQL_ROOT_PASSWORD: root_password
+      PMA_ARBITRARY: 1
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - ecommerce
+
 networks:
   ecommerce:
     driver: bridge

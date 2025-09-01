@@ -51,7 +51,7 @@ class DashboardController extends AbstractController
     #[Route('/', name: 'dashboard')]
     public function dashboard(): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        // $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
         // Statistiques générales
         $nombreUtilisateurs = $this->utilisateurRepository->compterParRole('ROLE_ETUDIANT');
