@@ -1,0 +1,444 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ produit.nom }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-0">
+            <i class="bi bi-box-seam me-2"></i>{{ produit.nom }}
+        </h1>
+        <p class="text-muted mb-0">Détails du produit et statistiques</p>
+    </div>
+    <div>
+        <a href="{{ path('admin_produits_edit', {id: produit.id}) }}" class="btn btn-primary me-2">
+            <i class="bi bi-pencil me-2"></i>Modifier
+        </a>
+        <a href="{{ path('admin_produits_index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Retour
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informations principales -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Informations du Produit
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-semibold text-muted" width="40%">Nom:</td>
+                                <td>{{ produit.nom }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Prix:</td>
+                                <td>
+                                    <span class="h5 text-primary mb-0">
+                                        {{ produit.prix|number_format(0, ',', ' ') }} FCFA
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Stock:</td>
+                                <td>
+                                    {% if produit.stock == 0 %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>En rupture
+                                        </span>
+                                    {% elseif produit.stock <= 5 %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-exclamation-circle me-1"></i>Stock faible ({{ produit.stock }})
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success">{{ produit.stock }} unités</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Catégorie:</td>
+                                <td>
+                                    <span class="badge" style="background: linear-gradient(135deg, var(--admin-info), #26c6da);">
+                                        {{ produit.categorie.nom }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Statut:</td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input status-toggle" type="checkbox" 
+                                               data-product-id="{{ produit.id }}"
+                                               {{ produit.actif ? 'checked' : '' }}>
+                                        <label class="form-check-label">
+                                            {{ produit.actif ? 'Actif' : 'Inactif' }}
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold text-muted">Date de création:</td>
+                                <td>{{ produit.dateCreation|date('d/m/Y à H:i') }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            {% if produit.image %}
+                                <img src="{{ asset('uploads/products/' ~ produit.image) }}" 
+                                     alt="{{ produit.nom }}" class="img-fluid rounded shadow"
+                                     style="max-height: 300px;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 200px;">
+                                    <div class="text-center">
+                                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                        <p class="text-muted mt-2">Aucune image</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if produit.description %}
+                    <div class="mt-4">
+                        <h6 class="fw-semibold">Description:</h6>
+                        <p class="text-muted">{{ produit.description|nl2br }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Commandes récentes -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-cart-check me-2"></i>Commandes Récentes
+                </h5>
+                <span class="badge bg-secondary">{{ produit.articlesCommande|length }} commande(s)</span>
+            </div>
+            <div class="card-body">
+                {% if produit.articlesCommande is empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-cart-x text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2 mb-0">Aucune commande pour ce produit</p>
+                    </div>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Commande</th>
+                                    <th>Client</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Total</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for article in produit.articlesCommande|slice(0, 10) %}
+                                    <tr>
+                                        <td>#{{ article.commande.id }}</td>
+                                        <td>{{ article.commande.utilisateur.nomComplet }}</td>
+                                        <td>{{ article.quantite }}</td>
+                                        <td>{{ article.prixUnitaire|number_format(0, ',', ' ') }} FCFA</td>
+                                        <td class="fw-semibold">
+                                            {{ (article.quantite * article.prixUnitaire)|number_format(0, ',', ' ') }} FCFA
+                                        </td>
+                                        <td>{{ article.commande.dateCreation|date('d/m/Y') }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ article.commande.statut == 'LIVREE' ? 'success' : (article.commande.statut == 'ANNULEE' ? 'danger' : 'warning') }}">
+                                                {{ article.commande.statutLibelle }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if produit.articlesCommande|length > 10 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                ... et {{ produit.articlesCommande|length - 10 }} autre(s) commande(s)
+                            </small>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="col-lg-4">
+        <!-- Statistiques générales -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart me-2"></i>Statistiques
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-primary mb-1">
+                                {% set totalVendu = 0 %}
+                                {% for article in produit.articlesCommande %}
+                                    {% if article.commande.statut != 'ANNULEE' %}
+                                        {% set totalVendu = totalVendu + article.quantite %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ totalVendu }}
+                            </div>
+                            <small class="text-muted">Unités vendues</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-success mb-1">
+                                {% set nombreCommandes = 0 %}
+                                {% for article in produit.articlesCommande %}
+                                    {% if article.commande.statut != 'ANNULEE' %}
+                                        {% set nombreCommandes = nombreCommandes + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ nombreCommandes }}
+                            </div>
+                            <small class="text-muted">Commandes</small>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 text-warning mb-1">
+                                {% set chiffreAffaires = 0 %}
+                                {% for article in produit.articlesCommande %}
+                                    {% if article.commande.statut != 'ANNULEE' %}
+                                        {% set chiffreAffaires = chiffreAffaires + (article.quantite * article.prixUnitaire) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ chiffreAffaires|number_format(0, ',', ' ') }} FCFA
+                            </div>
+                            <small class="text-muted">Chiffre d'affaires</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métriques avancées -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Métriques
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Valeur du stock</small>
+                        <small class="fw-semibold">{{ (produit.stock * produit.prixFloat)|number_format(0, ',', ' ') }} FCFA</small>
+                    </div>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                {% if totalVendu > 0 %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">Taux de rotation</small>
+                            <small class="fw-semibold">
+                                {{ ((totalVendu / (totalVendu + produit.stock)) * 100)|round(1) }}%
+                            </small>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-success" 
+                                 style="width: {{ ((totalVendu / (totalVendu + produit.stock)) * 100)|round(1) }}%"></div>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Prix moyen/unité</small>
+                        <small class="fw-semibold">
+                            {% if produit.articlesCommande|length > 0 %}
+                                {% set prixMoyen = 0 %}
+                                {% for article in produit.articlesCommande %}
+                                    {% set prixMoyen = prixMoyen + article.prixUnitaire %}
+                                {% endfor %}
+                                {{ (prixMoyen / produit.articlesCommande|length)|number_format(0, ',', ' ') }} FCFA
+                            {% else %}
+                                {{ produit.prix|number_format(0, ',', ' ') }} FCFA
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Actions Rapides
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ path('admin_produits_edit', {id: produit.id}) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil me-2"></i>Modifier le produit
+                    </a>
+                    
+                    {% if produit.stock <= 5 %}
+                        <button class="btn btn-outline-warning btn-sm" onclick="showStockAlert()">
+                            <i class="bi bi-plus-square me-2"></i>Réapprovisionner
+                        </button>
+                    {% endif %}
+                    
+                    <button class="btn btn-outline-info btn-sm" onclick="duplicateProduct()">
+                        <i class="bi bi-files me-2"></i>Dupliquer le produit
+                    </button>
+                    
+                    <hr class="my-2">
+                    
+                    <button class="btn btn-outline-danger btn-sm" onclick="confirmDelete()">
+                        <i class="bi bi-trash me-2"></i>Supprimer le produit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>Confirmer la suppression
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer le produit <strong>{{ produit.nom }}</strong> ?</p>
+                {% if produit.articlesCommande|length > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Ce produit a {{ produit.articlesCommande|length }} commande(s) associée(s). 
+                        La suppression pourrait affecter l'historique des commandes.
+                    </div>
+                {% endif %}
+                <p class="text-muted small">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form method="POST" action="{{ path('admin_produits_delete', {id: produit.id}) }}" class="d-inline">
+                    <input type="hidden" name="_token" value="csrf_token_placeholder">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Supprimer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Toggle de statut
+        document.querySelector('.status-toggle').addEventListener('change', async function() {
+            const productId = this.dataset.productId;
+            const isActive = this.checked;
+            
+            try {
+                const response = await fetch(`{{ path('admin_produits_toggle_status', {id: produit.id}) }}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `_token=csrf_token_placeholder`
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.checked = result.newStatus;
+                    const label = this.nextElementSibling;
+                    label.textContent = result.newStatus ? 'Actif' : 'Inactif';
+                    
+                    showToast(result.message, 'success');
+                } else {
+                    this.checked = !isActive;
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                this.checked = !isActive;
+                showToast('Erreur lors de la mise à jour', 'error');
+            }
+        });
+
+        function confirmDelete() {
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function showStockAlert() {
+            showToast('Fonctionnalité de réapprovisionnement à venir', 'info');
+        }
+
+        function duplicateProduct() {
+            if (confirm('Créer une copie de ce produit ?')) {
+                window.location.href = `{{ path('admin_produits_new') }}?duplicate={{ produit.id }}`;
+            }
+        }
+
+        function showToast(message, type) {
+            const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : (type === 'error' ? 'danger' : 'info')} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            toastContainer.appendChild(toast);
+            new bootstrap.Toast(toast).show();
+            
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '11';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // Animation des métriques au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            const statCards = document.querySelectorAll('.bg-light');
+            statCards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.animation = 'fadeIn 0.6s ease-out';
+                }, index * 100);
+            });
+        });
+    </script>
+{% endblock %}

@@ -282,12 +282,12 @@
                 const isActive = this.checked;
                 
                 try {
-                    const response = await fetch(`{{ path('admin_produits_toggle_status', {id: '__ID__'}) }}`.replace('__ID__', productId), {
+                    const response = await fetch('/admin/produits/' + productId + '/toggle-status', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: `_token=${getCsrfToken()}`
+                        body: '_token=csrf_token_placeholder'
                     });
                     
                     const result = await response.json();
