@@ -24,13 +24,14 @@ class PanierRepository extends ServiceEntityRepository
      */
     public function findPanierActif(Utilisateur $utilisateur): ?Panier
     {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.utilisateur = :utilisateur')
-            ->setParameter('utilisateur', $utilisateur)
-            ->orderBy('p.dateModification', 'DESC')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
+        $qb = $this->createQueryBuilder('p');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('p.utilisateur = :utilisateur')
+           ->setParameter('utilisateur', $utilisateur)
+           ->orderBy('p.dateModification', 'DESC')
+           ->setMaxResults(1);
+        
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     /**

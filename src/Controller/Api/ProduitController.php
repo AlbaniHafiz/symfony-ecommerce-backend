@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\Produit;
 use App\Repository\ProduitRepository;
 use App\Repository\CategorieRepository;
+use App\Service\SoftDeleteService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +18,7 @@ class ProduitController extends AbstractController
     public function __construct(
         private ProduitRepository $produitRepository,
         private CategorieRepository $categorieRepository,
+        private SoftDeleteService $softDeleteService,
         private SerializerInterface $serializer
     ) {}
 
@@ -140,10 +142,12 @@ class ProduitController extends AbstractController
         $limit = $request->query->getInt('limit', 10);
         
         // Produits créés dans les 30 derniers jours
-        $produits = $this->produitRepository->createQueryBuilder('p')
-            ->innerJoin('p.categorie', 'c')
+        $qb = $this->produitRepository->createQueryBuilder('p');
+        $this->produitRepository->addNotDeletedCondition($qb);
+        $produits = $qb->innerJoin('p.categorie', 'c')
             ->andWhere('p.actif = :actif')
             ->andWhere('c.active = :active')
+            ->andWhere('c.deletedAt IS NULL')
             ->andWhere('p.dateCreation >= :date')
             ->setParameter('actif', true)
             ->setParameter('active', true)
@@ -159,5 +163,21 @@ class ProduitController extends AbstractController
             'produits' => json_decode($produitsData),
             'limit' => $limit
         ]);
+    }
+
+    #[Route('/admin/produits/{id}/soft-delete', name: 'admin_produit_soft_delete', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function softDelete(int $id): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        
+        $produit = $this->produitRepository->find($id);
+        
+        if (!$produit) {
+            return $this->json(['message' => 'Produit non trouvé'], 404);
+        }
+        
+        $this->softDeleteService->softDelete($produit);
+        
+        return $this->json(['message' => 'Produit supprimé (soft delete)']);
     }
 }

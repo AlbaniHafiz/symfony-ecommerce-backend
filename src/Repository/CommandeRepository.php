@@ -25,12 +25,13 @@ class CommandeRepository extends ServiceEntityRepository
      */
     public function findByUtilisateur(Utilisateur $utilisateur): array
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.utilisateur = :utilisateur')
-            ->setParameter('utilisateur', $utilisateur)
-            ->orderBy('c.dateCreation', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('c.utilisateur = :utilisateur')
+           ->setParameter('utilisateur', $utilisateur)
+           ->orderBy('c.dateCreation', 'DESC');
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -39,12 +40,13 @@ class CommandeRepository extends ServiceEntityRepository
      */
     public function findByStatut(string $statut): array
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.statut = :statut')
-            ->setParameter('statut', $statut)
-            ->orderBy('c.dateCreation', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('c.statut = :statut')
+           ->setParameter('statut', $statut)
+           ->orderBy('c.dateCreation', 'DESC');
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -53,12 +55,13 @@ class CommandeRepository extends ServiceEntityRepository
      */
     public function findEnAttentelivraison(): array
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.statut IN (:statuts)')
-            ->setParameter('statuts', ['CONFIRMEE', 'EN_PREPARATION', 'EN_LIVRAISON'])
-            ->orderBy('c.dateCreation', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('c.statut IN (:statuts)')
+           ->setParameter('statuts', ['CONFIRMEE', 'EN_PREPARATION', 'EN_LIVRAISON'])
+           ->orderBy('c.dateCreation', 'ASC');
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -66,19 +69,20 @@ class CommandeRepository extends ServiceEntityRepository
      */
     public function getStatistiquesParPeriode(\DateTimeInterface $debut, \DateTimeInterface $fin): array
     {
-        return $this->createQueryBuilder('c')
-            ->select('
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->select('
                 COUNT(c.id) as nombreCommandes,
                 SUM(c.total) as chiffreAffaires,
                 AVG(c.total) as panierMoyen,
                 c.statut
             ')
-            ->andWhere('c.dateCreation BETWEEN :debut AND :fin')
-            ->setParameter('debut', $debut)
-            ->setParameter('fin', $fin)
-            ->groupBy('c.statut')
-            ->getQuery()
-            ->getResult();
+           ->andWhere('c.dateCreation BETWEEN :debut AND :fin')
+           ->setParameter('debut', $debut)
+           ->setParameter('fin', $fin)
+           ->groupBy('c.statut');
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -87,11 +91,12 @@ class CommandeRepository extends ServiceEntityRepository
      */
     public function findRecentes(int $limit = 10): array
     {
-        return $this->createQueryBuilder('c')
-            ->orderBy('c.dateCreation', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->orderBy('c.dateCreation', 'DESC')
+           ->setMaxResults($limit);
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -99,11 +104,12 @@ class CommandeRepository extends ServiceEntityRepository
      */
     public function compterParStatut(): array
     {
-        return $this->createQueryBuilder('c')
-            ->select('c.statut, COUNT(c.id) as nombre')
-            ->groupBy('c.statut')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->select('c.statut, COUNT(c.id) as nombre')
+           ->groupBy('c.statut');
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -114,8 +120,9 @@ class CommandeRepository extends ServiceEntityRepository
         $debut = new \DateTime('first day of this month');
         $fin = new \DateTime('last day of this month');
 
-        $result = $this->createQueryBuilder('c')
-            ->select('SUM(c.total)')
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $result = $qb->select('SUM(c.total)')
             ->andWhere('c.dateCreation BETWEEN :debut AND :fin')
             ->andWhere('c.statut != :annulee')
             ->setParameter('debut', $debut)
@@ -136,13 +143,14 @@ class CommandeRepository extends ServiceEntityRepository
         $aujourd_hui = new \DateTime('today');
         $demain = new \DateTime('tomorrow');
 
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.dateCreation >= :aujourd_hui')
-            ->andWhere('c.dateCreation < :demain')
-            ->setParameter('aujourd_hui', $aujourd_hui)
-            ->setParameter('demain', $demain)
-            ->orderBy('c.dateCreation', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('c.dateCreation >= :aujourd_hui')
+           ->andWhere('c.dateCreation < :demain')
+           ->setParameter('aujourd_hui', $aujourd_hui)
+           ->setParameter('demain', $demain)
+           ->orderBy('c.dateCreation', 'DESC');
+
+        return $qb->getQuery()->getResult();
     }
 }

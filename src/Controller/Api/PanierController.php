@@ -6,6 +6,7 @@ use App\Entity\Utilisateur;
 use App\Entity\ArticlePanier;
 use App\Repository\PanierRepository;
 use App\Repository\ProduitRepository;
+use App\Service\SoftDeleteService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,6 +21,7 @@ class PanierController extends AbstractController
         private EntityManagerInterface $entityManager,
         private PanierRepository $panierRepository,
         private ProduitRepository $produitRepository,
+        private SoftDeleteService $softDeleteService,
         private SerializerInterface $serializer
     ) {}
 
@@ -222,7 +224,7 @@ class PanierController extends AbstractController
         }
 
         $panier->removeArticlesPanier($articlePanier);
-        $this->entityManager->remove($articlePanier);
+        $this->softDeleteService->softDelete($articlePanier);
         $panier->toucherModification();
         
         $this->entityManager->flush();
@@ -245,9 +247,8 @@ class PanierController extends AbstractController
             return $this->json(['message' => 'Panier non trouvé'], 404);
         }
 
-        foreach ($panier->getArticlesPanier() as $article) {
-            $this->entityManager->remove($article);
-        }
+        $articlesPanier = $panier->getArticlesPanier()->toArray();
+        $this->softDeleteService->softDeleteBatch($articlesPanier);
 
         $panier->vider();
         
