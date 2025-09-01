@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Panier;
 use App\Entity\Utilisateur;
+use App\Repository\Trait\SoftDeleteRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -12,6 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PanierRepository extends ServiceEntityRepository
 {
+    use SoftDeleteRepositoryTrait;
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Panier::class);
@@ -22,13 +24,14 @@ class PanierRepository extends ServiceEntityRepository
      */
     public function findPanierActif(Utilisateur $utilisateur): ?Panier
     {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.utilisateur = :utilisateur')
-            ->setParameter('utilisateur', $utilisateur)
-            ->orderBy('p.dateModification', 'DESC')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
+        $qb = $this->createQueryBuilder('p');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('p.utilisateur = :utilisateur')
+           ->setParameter('utilisateur', $utilisateur)
+           ->orderBy('p.dateModification', 'DESC')
+           ->setMaxResults(1);
+        
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     /**

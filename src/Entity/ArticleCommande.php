@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\ArticleCommandeRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -11,6 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'article_commande')]
 class ArticleCommande
 {
+    use SoftDeleteable;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

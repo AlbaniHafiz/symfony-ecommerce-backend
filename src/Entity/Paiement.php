@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\PaiementRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -11,6 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'paiement')]
 class Paiement
 {
+    use SoftDeleteable;
     public const STATUT_EN_ATTENTE = 'EN_ATTENTE';
     public const STATUT_PAYE = 'PAYE';
     public const STATUT_ECHEC = 'ECHEC';

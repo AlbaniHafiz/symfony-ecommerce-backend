@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Categorie;
+use App\Repository\Trait\SoftDeleteRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -11,6 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CategorieRepository extends ServiceEntityRepository
 {
+    use SoftDeleteRepositoryTrait;
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Categorie::class);
@@ -22,12 +24,13 @@ class CategorieRepository extends ServiceEntityRepository
      */
     public function findActives(): array
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.active = :active')
-            ->setParameter('active', true)
-            ->orderBy('c.nom', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('c.active = :active')
+           ->setParameter('active', true)
+           ->orderBy('c.nom', 'ASC');
+        
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -35,13 +38,14 @@ class CategorieRepository extends ServiceEntityRepository
      */
     public function findActiveById(int $id): ?Categorie
     {
-        return $this->createQueryBuilder('c')
-            ->andWhere('c.id = :id')
-            ->andWhere('c.active = :active')
-            ->setParameter('id', $id)
-            ->setParameter('active', true)
-            ->getQuery()
-            ->getOneOrNullResult();
+        $qb = $this->createQueryBuilder('c');
+        $this->addNotDeletedCondition($qb);
+        $qb->andWhere('c.id = :id')
+           ->andWhere('c.active = :active')
+           ->setParameter('id', $id)
+           ->setParameter('active', true);
+        
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     /**
