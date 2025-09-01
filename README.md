@@ -89,16 +89,132 @@ symfony serve
 - `POST /api/commandes` - Créer une commande
 - `PUT /api/commandes/{id}/annuler` - Annuler une commande
 
-## 🖥️ Interface Admin
+## 🖥️ Interface Admin Moderne
 
-Accédez à l'interface d'administration : `/admin/login`
+![Interface Admin](https://github.com/user-attachments/assets/aeaaca12-bec3-4e6f-a294-7daeb473c51a)
 
-### Fonctionnalités
-- **Dashboard** avec statistiques en temps réel
-- **Gestion des utilisateurs** (étudiants, livreurs, admins)
-- **Gestion des produits** et catégories
-- **Suivi des commandes** et livraisons
-- **Alertes de stock** et statistiques
+### ✨ Fonctionnalités Exceptionnelles
+
+L'interface d'administration a été **complètement modernisée** avec :
+
+- **🎨 Design Ultra-Moderne** : Interface avec gradients CSS3, animations fluides et palette harmonieuse
+- **📊 Dashboard Avancé** : Statistiques en temps réel avec graphiques interactifs  
+- **🔧 Gestion Séparée par Entité** : Interface dédiée pour chaque module (Produits, Commandes, Utilisateurs, etc.)
+- **🔍 Filtres Dynamiques** : Recherche avancée et filtrage en temps réel
+- **📱 Design Responsive** : Compatible mobile, tablette et desktop
+- **⚡ Actions Rapides** : Toggle d'état, modals interactifs, notifications
+
+### 🚀 Accès à l'Administration
+
+```bash
+# URL de l'interface admin
+http://localhost:8080/admin
+
+# Comptes de test
+Administrateur : admin@ecommerce.test / admin123
+Étudiant      : fatou.diallo@etudiant.test / etudiant123
+Livreur       : moussa.ndiaye@livreur.test / livreur123
+```
+
+### 📋 Modules Disponibles
+
+- **📊 Dashboard** : Vue d'ensemble avec statistiques temps réel
+- **📦 Gestion des Produits** : CRUD complet avec filtres avancés et gestion des stocks
+- **🛒 Gestion des Commandes** : Suivi des commandes par statut et attribution aux livreurs
+- **👥 Gestion des Utilisateurs** : Administration des comptes étudiants, livreurs et admins
+- **💳 Gestion des Paiements** : Suivi des transactions et méthodes de paiement
+- **🚛 Gestion des Livraisons** : Attribution et suivi des livraisons
+- **🏷️ Gestion des Catégories** : Organisation du catalogue produits
+- **📚 Documentation Intégrée** : Guide utilisateur accessible depuis l'admin
+
+## 🗄️ Configuration Base de Données avec PHPMyAdmin
+
+### 🐳 Installation avec Docker (Recommandée)
+
+Le projet inclut une configuration Docker complète avec MySQL et PHPMyAdmin :
+
+```bash
+# Démarrer tous les services
+docker-compose up -d
+
+# Services disponibles :
+# - Application Symfony : http://localhost:8080
+# - PHPMyAdmin : http://localhost:8081
+# - MySQL : localhost:3306
+```
+
+### 🔐 Accès PHPMyAdmin
+
+```
+URL      : http://localhost:8081
+Server   : mysql
+Username : root
+Password : root_password
+Database : ecommerce_etudiant
+```
+
+### ⚙️ Configuration Manuelle (Alternative)
+
+Si vous préférez une installation locale sans Docker :
+
+1. **Installer MySQL 8.0**
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install mysql-server
+
+# macOS
+brew install mysql
+
+# Windows : Télécharger depuis mysql.com
+```
+
+2. **Créer la base de données**
+```sql
+CREATE DATABASE ecommerce_etudiant CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'ecommerce_user'@'localhost' IDENTIFIED BY 'ecommerce_password';
+GRANT ALL PRIVILEGES ON ecommerce_etudiant.* TO 'ecommerce_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+3. **Configurer l'application**
+```bash
+# Mettre à jour .env
+DATABASE_URL="mysql://ecommerce_user:ecommerce_password@127.0.0.1:3306/ecommerce_etudiant?serverVersion=8.0.32&charset=utf8mb4"
+
+# Exécuter les migrations
+php bin/console doctrine:migrations:migrate
+
+# Charger les données de test
+php bin/console doctrine:fixtures:load
+```
+
+4. **Installer PHPMyAdmin (optionnel)**
+```bash
+# Ubuntu/Debian
+sudo apt install phpmyadmin
+
+# macOS avec Homebrew
+brew install phpmyadmin
+
+# Ou télécharger depuis phpmyadmin.net
+```
+
+### 🚀 Migration de SQLite vers MySQL
+
+Le projet peut facilement basculer entre SQLite et MySQL :
+
+```bash
+# Sauvegarder les données actuelles
+php bin/console doctrine:fixtures:load --no-interaction
+
+# Mettre à jour .env pour MySQL
+DATABASE_URL="mysql://ecommerce_user:ecommerce_password@127.0.0.1:3306/ecommerce_etudiant?serverVersion=8.0.32&charset=utf8mb4"
+
+# Recréer la structure
+php bin/console doctrine:database:create
+php bin/console doctrine:migrations:migrate
+php bin/console doctrine:fixtures:load
+```
 
 ## 🗄️ Structure de la base de données
 
