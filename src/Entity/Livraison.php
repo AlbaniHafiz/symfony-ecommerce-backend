@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\LivraisonRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -11,6 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'livraison')]
 class Livraison
 {
+    use SoftDeleteable;
     public const STATUT_EN_ATTENTE = 'EN_ATTENTE';
     public const STATUT_ASSIGNEE = 'ASSIGNEE';
     public const STATUT_EN_COURS = 'EN_COURS';

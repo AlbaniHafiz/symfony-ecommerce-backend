@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\UtilisateurRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,6 +19,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[UniqueEntity(fields: ['email'], message: 'Cette adresse email est déjà utilisée.')]
 class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    use SoftDeleteable;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

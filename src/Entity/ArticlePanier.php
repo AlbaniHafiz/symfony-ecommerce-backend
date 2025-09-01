@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\ArticlePanierRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -10,6 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'article_panier')]
 class ArticlePanier
 {
+    use SoftDeleteable;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

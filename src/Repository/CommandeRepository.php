@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Commande;
 use App\Entity\Utilisateur;
+use App\Repository\Trait\SoftDeleteRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -12,6 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CommandeRepository extends ServiceEntityRepository
 {
+    use SoftDeleteRepositoryTrait;
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Commande::class);

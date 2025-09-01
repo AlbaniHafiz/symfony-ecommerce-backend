@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\ProduitRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -14,6 +15,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\Table(name: 'produit')]
 class Produit
 {
+    use SoftDeleteable;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

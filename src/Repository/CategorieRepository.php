@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Categorie;
+use App\Repository\Trait\SoftDeleteRepositoryTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -11,6 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CategorieRepository extends ServiceEntityRepository
 {
+    use SoftDeleteRepositoryTrait;
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Categorie::class);

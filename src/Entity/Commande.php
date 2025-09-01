@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Entity\Trait\SoftDeleteable;
 use App\Repository\CommandeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -13,6 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'commande')]
 class Commande
 {
+    use SoftDeleteable;
     public const STATUT_EN_ATTENTE = 'EN_ATTENTE';
     public const STATUT_CONFIRMEE = 'CONFIRMEE';
     public const STATUT_EN_PREPARATION = 'EN_PREPARATION';
