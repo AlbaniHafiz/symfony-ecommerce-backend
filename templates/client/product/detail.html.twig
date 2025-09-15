@@ -1,0 +1,237 @@
+{% extends 'client/base.html.twig' %}
+
+{% block page_title %}{{ produit.nom }} - Détail produit{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('client_homepage') }}">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{{ path('client_homepage', {'category': produit.categorie.id}) }}">{{ produit.categorie.nom }}</a></li>
+            <li class="breadcrumb-item active">{{ produit.nom }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body p-0">
+                    {% if produit.image %}
+                        <img src="{{ produit.image }}" class="img-fluid w-100" alt="{{ produit.nom }}" style="height: 400px; object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center bg-light" style="height: 400px;">
+                            <i class="bi bi-image text-muted" style="font-size: 6rem;"></i>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Category Badge -->
+                    <div class="mb-3">
+                        <span class="badge bg-secondary">{{ produit.categorie.nom }}</span>
+                        {% if produit.stock <= 5 and produit.stock > 0 %}
+                            <span class="badge bg-warning ms-2">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Stock limité
+                            </span>
+                        {% elseif produit.stock == 0 %}
+                            <span class="badge bg-danger ms-2">
+                                <i class="bi bi-x-circle me-1"></i>Rupture de stock
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Product Name -->
+                    <h1 class="h2 mb-3">{{ produit.nom }}</h1>
+
+                    <!-- Price -->
+                    <div class="mb-4">
+                        <span class="h3 text-primary fw-bold">{{ produit.prix|number_format(0, ',', ' ') }} FCFA</span>
+                    </div>
+
+                    <!-- Stock Info -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-box-seam me-2 text-muted"></i>
+                            <span class="text-muted">Stock disponible: </span>
+                            <strong class="ms-2">{{ produit.stock }} unité(s)</strong>
+                        </div>
+                    </div>
+
+                    <!-- Add to Cart Form -->
+                    {% if produit.stock > 0 %}
+                        <div class="mb-4">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="quantity" class="form-label">Quantité</label>
+                                    <select class="form-select" id="quantity">
+                                        {% for i in 1..min(10, produit.stock) %}
+                                            <option value="{{ i }}">{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-grid">
+                                        <button type="button" 
+                                                class="btn btn-primary btn-lg"
+                                                onclick="addToCartFromDetail({{ produit.id }})">
+                                            <i class="bi bi-cart-plus me-2"></i>Ajouter au panier
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Ce produit est actuellement en rupture de stock.
+                        </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 mb-4">
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="bi bi-heart me-1"></i>Favoris
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary">
+                            <i class="bi bi-share me-1"></i>Partager
+                        </button>
+                    </div>
+
+                    <!-- Seller Info -->
+                    <div class="border-top pt-3">
+                        <h6 class="text-muted mb-2">Vendeur</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-shop text-white"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <strong>Marketplace Étudiant</strong>
+                                <div class="small text-muted">Vendeur vérifié</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Description -->
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Description du produit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ produit.description|nl2br }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-truck me-2"></i>Informations de livraison
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Livraison gratuite sur le campus
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-clock text-info me-2"></i>
+                            Livraison en 24-48h
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-shield-check text-primary me-2"></i>
+                            Garantie étudiant
+                        </li>
+                        <li>
+                            <i class="bi bi-arrow-return-left text-warning me-2"></i>
+                            Retour possible sous 7 jours
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if produitsLies|length > 0 %}
+        <div class="mt-5">
+            <h3 class="mb-4">
+                <i class="bi bi-grid me-2"></i>Produits similaires
+            </h3>
+            <div class="row">
+                {% for produitLie in produitsLies %}
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                        {{ include('client/_partials/product_card.html.twig', {'produit': produitLie}) }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function addToCartFromDetail(productId) {
+    const quantitySelect = document.getElementById('quantity');
+    const quantity = quantitySelect ? quantitySelect.value : 1;
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    
+    btn.innerHTML = '<span class="loading-spinner me-2"></span>Ajout en cours...';
+    btn.disabled = true;
+
+    fetch(`/client/panier/ajouter/${productId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `quantite=${quantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateCartCount(data.cartCount);
+            showNotification(data.message, 'success');
+            
+            // Update button temporarily
+            btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Ajouté !';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-primary');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-primary');
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            showNotification(data.message, 'danger');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        showNotification('Erreur lors de l\'ajout au panier', 'danger');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+</script>
+{% endblock %}

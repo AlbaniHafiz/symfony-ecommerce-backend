@@ -1,0 +1,248 @@
+{% extends 'client/base.html.twig' %}
+
+{% block page_title %}Mon Panier{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-cart3 me-2"></i>Mon Panier
+        </h1>
+        <a href="{{ path('client_homepage') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>Continuer les achats
+        </a>
+    </div>
+
+    {% if panier and panier.articlesPanier|length > 0 %}
+        <div class="row">
+            <!-- Cart Items -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Articles dans votre panier ({{ panier.articlesPanier|length }})</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for article in panier.articlesPanier %}
+                            <div class="cart-item border-bottom p-3" data-item-id="{{ article.id }}">
+                                <div class="row align-items-center">
+                                    <!-- Product Image -->
+                                    <div class="col-md-2">
+                                        {% if article.produit.image %}
+                                            <img src="{{ article.produit.image }}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="{{ article.produit.nom }}"
+                                                 style="height: 80px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Product Info -->
+                                    <div class="col-md-4">
+                                        <h6 class="mb-1">
+                                            <a href="{{ path('client_product_detail', {'id': article.produit.id}) }}" 
+                                               class="text-decoration-none">
+                                                {{ article.produit.nom }}
+                                            </a>
+                                        </h6>
+                                        <p class="text-muted small mb-1">{{ article.produit.categorie.nom }}</p>
+                                        <small class="text-muted">Stock: {{ article.produit.stock }}</small>
+                                    </div>
+
+                                    <!-- Quantity -->
+                                    <div class="col-md-2">
+                                        <div class="input-group input-group-sm">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="updateQuantity({{ article.id }}, {{ article.quantite - 1 }})">
+                                                <i class="bi bi-dash"></i>
+                                            </button>
+                                            <input type="number" 
+                                                   class="form-control text-center" 
+                                                   value="{{ article.quantite }}" 
+                                                   min="1" 
+                                                   max="{{ article.produit.stock }}"
+                                                   readonly>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                    onclick="updateQuantity({{ article.id }}, {{ article.quantite + 1 }})">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Unit Price -->
+                                    <div class="col-md-2 text-center">
+                                        <span class="fw-bold">{{ article.prix|number_format(0, ',', ' ') }} FCFA</span>
+                                    </div>
+
+                                    <!-- Total & Actions -->
+                                    <div class="col-md-2 text-end">
+                                        <div class="mb-2">
+                                            <span class="fw-bold text-primary">
+                                                {{ (article.prix * article.quantite)|number_format(0, ',', ' ') }} FCFA
+                                            </span>
+                                        </div>
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="removeFromCart({{ article.id }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 100px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calculator me-2"></i>Récapitulatif
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% set subtotal = 0 %}
+                        {% for article in panier.articlesPanier %}
+                            {% set subtotal = subtotal + (article.prix * article.quantite) %}
+                        {% endfor %}
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Sous-total ({{ panier.articlesPanier|length }} articles)</span>
+                            <span>{{ subtotal|number_format(0, ',', ' ') }} FCFA</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Livraison</span>
+                            <span class="text-success">Gratuite</span>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total</strong>
+                            <strong class="text-primary fs-5">{{ subtotal|number_format(0, ',', ' ') }} FCFA</strong>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {% if app.user %}
+                                <button type="button" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-credit-card me-2"></i>Commander
+                                </button>
+                            {% else %}
+                                <a href="{{ path('client_login') }}" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter pour commander
+                                </a>
+                            {% endif %}
+                            
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearCart()">
+                                <i class="bi bi-trash me-2"></i>Vider le panier
+                            </button>
+                        </div>
+
+                        <!-- Promo Code -->
+                        <div class="mt-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title small mb-2">Code promo</h6>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control form-control-sm" placeholder="Code promo">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button">
+                                            Appliquer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Empty Cart -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-cart-x display-1 text-muted"></i>
+            </div>
+            <h3>Votre panier est vide</h3>
+            <p class="text-muted mb-4">Découvrez nos produits et ajoutez-les à votre panier</p>
+            <a href="{{ path('client_homepage') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-grid me-2"></i>Voir les produits
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function updateQuantity(articleId, newQuantity) {
+    if (newQuantity < 1) {
+        removeFromCart(articleId);
+        return;
+    }
+
+    fetch(`/client/panier/modifier/${articleId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `quantite=${newQuantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Refresh to update totals
+        } else {
+            showNotification(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showNotification('Erreur lors de la mise à jour', 'danger');
+    });
+}
+
+function removeFromCart(articleId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
+        return;
+    }
+
+    fetch(`/client/panier/supprimer/${articleId}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the item visually
+            const itemElement = document.querySelector(`[data-item-id="${articleId}"]`);
+            if (itemElement) {
+                itemElement.remove();
+            }
+            
+            updateCartCount(data.cartCount);
+            showNotification(data.message, 'success');
+            
+            // Reload if no more items
+            if (data.cartCount === 0) {
+                setTimeout(() => location.reload(), 1000);
+            }
+        } else {
+            showNotification(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showNotification('Erreur lors de la suppression', 'danger');
+    });
+}
+
+function clearCart() {
+    if (!confirm('Êtes-vous sûr de vouloir vider votre panier ?')) {
+        return;
+    }
+
+    // This would need a specific endpoint
+    showNotification('Fonctionnalité à implémenter', 'info');
+}
+</script>
+{% endblock %}

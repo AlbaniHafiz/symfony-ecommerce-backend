@@ -88,6 +88,14 @@ class UtilisateurRepository extends ServiceEntityRepository implements PasswordU
     }
 
     /**
+     * Alias pour compterParRole - pour compatibilité
+     */
+    public function countByRole(string $role): int
+    {
+        return $this->compterParRole($role);
+    }
+
+    /**
      * Recherche d'utilisateurs par nom, prénom ou email
      * @return Utilisateur[]
      */
