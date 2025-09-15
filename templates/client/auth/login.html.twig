@@ -1,0 +1,97 @@
+{% extends 'client/base.html.twig' %}
+
+{% block page_title %}Connexion{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Connexion
+                    </h3>
+                    <p class="text-muted mb-0">Accédez à votre compte</p>
+                </div>
+                <div class="card-body p-4">
+                    {% if error %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            {{ error.messageKey|trans(error.messageData, 'security') }}
+                        </div>
+                    {% endif %}
+
+                    <form method="post">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="bi bi-envelope me-1"></i>Adresse email
+                            </label>
+                            <input type="email" 
+                                   id="email" 
+                                   name="_username" 
+                                   class="form-control" 
+                                   value="{{ last_username }}" 
+                                   required 
+                                   autofocus>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="bi bi-lock me-1"></i>Mot de passe
+                            </label>
+                            <input type="password" 
+                                   id="password" 
+                                   name="_password" 
+                                   class="form-control" 
+                                   required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember_me" name="_remember_me">
+                            <label class="form-check-label" for="remember_me">
+                                Se souvenir de moi
+                            </label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="mb-2">Pas encore de compte ?</p>
+                        <a href="{{ path('client_register') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-person-plus me-2"></i>Créer un compte
+                        </a>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <a href="#" class="text-muted text-decoration-none small">
+                            <i class="bi bi-question-circle me-1"></i>Mot de passe oublié ?
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demo accounts info -->
+            <div class="card mt-4 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle me-2"></i>Comptes de démonstration
+                    </h6>
+                    <small class="text-muted">
+                        <strong>Étudiant:</strong> fatou.diallo@etudiant.test / etudiant123<br>
+                        <strong>Admin:</strong> admin@ecommerce.test / admin123
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

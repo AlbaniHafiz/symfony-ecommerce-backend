@@ -1,0 +1,276 @@
+{% extends 'seller/base.html.twig' %}
+
+{% block page_title %}Dashboard Vendeur{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-0">
+            <i class="bi bi-speedometer2 me-2"></i>Dashboard Vendeur
+        </h1>
+        <p class="text-muted mb-0">Bienvenue {{ vendeur.nomComplet }}, voici votre activité</p>
+    </div>
+    <a href="{{ path('seller_products_new') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Nouveau Produit
+    </a>
+</div>
+
+<!-- Statistiques principales -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--seller-primary), var(--seller-secondary));">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.totalProduits }}</h3>
+                <p class="stats-label">Produits</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--seller-info), #0abde3);">
+                <i class="bi bi-cart-check"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.totalCommandes }}</h3>
+                <p class="stats-label">Commandes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--seller-success), #00d2d3);">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ (stats.chiffreAffaires / 1000)|number_format(0) }}K</h3>
+                <p class="stats-label">Chiffre d'affaires</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--seller-warning), #ff9f43);">
+                <i class="bi bi-graph-up"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ (stats.commissionsGagnees / 1000)|number_format(0) }}K</h3>
+                <p class="stats-label">Commissions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Revenus du mois -->
+    <div class="col-lg-4 mb-4">
+        <div class="revenue-card">
+            <h5 class="mb-3">
+                <i class="bi bi-calendar-month me-2"></i>Revenus ce mois
+            </h5>
+            <div class="revenue-number">125 000 FCFA</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span>+12% vs mois dernier</span>
+                <i class="bi bi-arrow-up-right fs-4"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphique des ventes -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Évolution des ventes
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Produits récents -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-box-seam me-2"></i>Produits récents
+                </h5>
+                <a href="{{ path('seller_products') }}" class="btn btn-sm btn-outline-light">
+                    Voir tout
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recentProducts %}
+                    <div class="list-group list-group-flush">
+                        {% for produit in recentProducts %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        {% if produit.image %}
+                                            <img src="{{ produit.image }}" alt="{{ produit.nom }}" 
+                                                 class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                 style="width: 50px; height: 50px;">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">{{ produit.nom }}</h6>
+                                        <small class="text-muted">{{ produit.categorie.nom }}</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold">{{ produit.prix|number_format(0, ',', ' ') }} FCFA</div>
+                                    <small class="text-muted">Stock: {{ produit.stock }}</small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-box-seam display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Aucun produit pour le moment</p>
+                        <a href="{{ path('seller_products_new') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Ajouter un produit
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Commandes récentes -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-cart-check me-2"></i>Commandes récentes
+                </h5>
+                <a href="{{ path('seller_orders') }}" class="btn btn-sm btn-outline-light">
+                    Voir tout
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recentOrders %}
+                    <div class="list-group list-group-flush">
+                        {% for commande in recentOrders %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">Commande #{{ commande.id }}</h6>
+                                        <p class="mb-1 small">{{ commande.utilisateur.nomComplet }}</p>
+                                        <small class="text-muted">{{ commande.dateCreation|date('d/m/Y H:i') }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold">{{ commande.total|number_format(0, ',', ' ') }} FCFA</div>
+                                        {% set statusClass = commande.statut == 'EN_ATTENTE' ? 'warning' : 
+                                                           (commande.statut == 'CONFIRMEE' ? 'info' : 
+                                                           (commande.statut == 'LIVREE' ? 'success' : 'primary')) %}
+                                        <span class="badge bg-{{ statusClass }} small">{{ commande.statut|replace({'_': ' '}) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-cart-x display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Aucune commande pour le moment</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Actions rapides
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ path('seller_products_new') }}" class="btn btn-outline-primary w-100 p-3">
+                            <i class="bi bi-plus-circle d-block mb-2" style="font-size: 2rem;"></i>
+                            <strong>Ajouter un produit</strong>
+                            <div class="small text-muted">Créer un nouveau produit</div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ path('seller_orders') }}" class="btn btn-outline-success w-100 p-3">
+                            <i class="bi bi-cart-check d-block mb-2" style="font-size: 2rem;"></i>
+                            <strong>Gérer les commandes</strong>
+                            <div class="small text-muted">Traiter les commandes</div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ path('seller_finances') }}" class="btn btn-outline-info w-100 p-3">
+                            <i class="bi bi-graph-up d-block mb-2" style="font-size: 2rem;"></i>
+                            <strong>Voir les finances</strong>
+                            <div class="small text-muted">Analyser les revenus</div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ path('seller_profile') }}" class="btn btn-outline-warning w-100 p-3">
+                            <i class="bi bi-person-gear d-block mb-2" style="font-size: 2rem;"></i>
+                            <strong>Mon profil</strong>
+                            <div class="small text-muted">Gérer mon compte</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Sales chart
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+const salesChart = new Chart(salesCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
+        datasets: [{
+            label: 'Ventes (FCFA)',
+            data: [85000, 92000, 78000, 105000, 115000, 125000],
+            borderColor: 'rgba(16, 172, 132, 1)',
+            backgroundColor: 'rgba(16, 172, 132, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' FCFA';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

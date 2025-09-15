@@ -1,0 +1,59 @@
+<div class="card product-card h-100">
+    <div class="position-relative">
+        {% if produit.image %}
+            <img src="{{ produit.image }}" class="card-img-top" alt="{{ produit.nom }}">
+        {% else %}
+            <div class="card-img-top d-flex align-items-center justify-content-center bg-light">
+                <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+            </div>
+        {% endif %}
+        
+        {% if produit.stock <= 5 and produit.stock > 0 %}
+            <span class="badge bg-warning position-absolute top-0 end-0 m-2">
+                <i class="bi bi-exclamation-triangle me-1"></i>Stock limité
+            </span>
+        {% elseif produit.stock == 0 %}
+            <span class="badge bg-danger position-absolute top-0 end-0 m-2">
+                <i class="bi bi-x-circle me-1"></i>Rupture
+            </span>
+        {% endif %}
+    </div>
+    
+    <div class="card-body d-flex flex-column">
+        <div class="mb-2">
+            <span class="badge bg-secondary small">{{ produit.categorie.nom }}</span>
+        </div>
+        
+        <h6 class="card-title">{{ produit.nom }}</h6>
+        
+        <p class="card-text text-muted small flex-grow-1">
+            {{ produit.description|length > 80 ? produit.description|slice(0, 80) ~ '...' : produit.description }}
+        </p>
+        
+        <div class="mt-auto">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="price-badge">{{ produit.prix|number_format(0, ',', ' ') }} FCFA</span>
+                <small class="text-muted">Stock: {{ produit.stock }}</small>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a href="{{ path('client_product_detail', {'id': produit.id}) }}" 
+                   class="btn btn-outline-primary flex-grow-1">
+                    <i class="bi bi-eye me-1"></i>Voir
+                </a>
+                
+                {% if produit.stock > 0 %}
+                    <button type="button" 
+                            class="btn btn-primary"
+                            onclick="addToCart({{ produit.id }})">
+                        <i class="bi bi-cart-plus"></i>
+                    </button>
+                {% else %}
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

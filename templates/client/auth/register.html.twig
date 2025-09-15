@@ -1,0 +1,164 @@
+{% extends 'client/base.html.twig' %}
+
+{% block page_title %}Inscription{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>Inscription
+                    </h3>
+                    <p class="text-muted mb-0">Créez votre compte étudiant</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nom" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Nom *
+                                </label>
+                                <input type="text" 
+                                       id="nom" 
+                                       name="nom" 
+                                       class="form-control" 
+                                       required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="prenom" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Prénom *
+                                </label>
+                                <input type="text" 
+                                       id="prenom" 
+                                       name="prenom" 
+                                       class="form-control" 
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="bi bi-envelope me-1"></i>Adresse email *
+                            </label>
+                            <input type="email" 
+                                   id="email" 
+                                   name="email" 
+                                   class="form-control" 
+                                   required>
+                            <div class="form-text">Utilisez votre adresse email étudiante</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="telephone" class="form-label">
+                                <i class="bi bi-telephone me-1"></i>Téléphone *
+                            </label>
+                            <input type="tel" 
+                                   id="telephone" 
+                                   name="telephone" 
+                                   class="form-control" 
+                                   placeholder="+221 77 123 45 67"
+                                   required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="adresse" class="form-label">
+                                <i class="bi bi-geo-alt me-1"></i>Adresse *
+                            </label>
+                            <textarea id="adresse" 
+                                      name="adresse" 
+                                      class="form-control" 
+                                      rows="2"
+                                      placeholder="Votre adresse complète"
+                                      required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="motDePasse" class="form-label">
+                                <i class="bi bi-lock me-1"></i>Mot de passe *
+                            </label>
+                            <input type="password" 
+                                   id="motDePasse" 
+                                   name="motDePasse" 
+                                   class="form-control" 
+                                   minlength="8"
+                                   required>
+                            <div class="form-text">Au moins 8 caractères</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">
+                                <i class="bi bi-lock-fill me-1"></i>Confirmer le mot de passe *
+                            </label>
+                            <input type="password" 
+                                   id="confirmPassword" 
+                                   name="confirmPassword" 
+                                   class="form-control" 
+                                   required>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    J'accepte les <a href="#" class="text-decoration-none">conditions d'utilisation</a> 
+                                    et la <a href="#" class="text-decoration-none">politique de confidentialité</a>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-person-plus me-2"></i>Créer mon compte
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="mb-2">Vous avez déjà un compte ?</p>
+                        <a href="{{ path('client_login') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Se connecter
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Benefits card -->
+            <div class="card mt-4 bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-star me-2"></i>Avantages du compte étudiant
+                    </h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Accès aux prix étudiants</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Livraison gratuite sur le campus</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Notifications de nouvelles offres</li>
+                        <li><i class="bi bi-check-circle text-success me-2"></i>Possibilité de devenir vendeur</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const password = document.getElementById('motDePasse');
+    const confirmPassword = document.getElementById('confirmPassword');
+    
+    function validatePassword() {
+        if (password.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Les mots de passe ne correspondent pas');
+        } else {
+            confirmPassword.setCustomValidity('');
+        }
+    }
+    
+    password.addEventListener('change', validatePassword);
+    confirmPassword.addEventListener('keyup', validatePassword);
+});
+</script>
+{% endblock %}

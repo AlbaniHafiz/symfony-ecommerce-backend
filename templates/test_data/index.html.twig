@@ -1,0 +1,438 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Générateur de Données de Test{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            min-height: calc(100vh - 4rem);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10ac84, #00d2d3);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #f1f2f6, white);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="main-container p-4">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="bi bi-database-gear me-3"></i>Générateur de Données de Test
+            </h1>
+            <p class="lead text-muted">Créez rapidement des données de test pour votre marketplace e-commerce</p>
+        </div>
+
+        <!-- Statistiques actuelles -->
+        <div class="row mb-5">
+            <div class="col-lg-4 col-md-6 mb-3">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" id="users-count">{{ stats.users }}</h3>
+                        <p class="stats-label">Utilisateurs</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-3">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #10ac84, #00d2d3);">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" id="products-count">{{ stats.products }}</h3>
+                        <p class="stats-label">Produits</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-3">
+                <div class="stats-card">
+                    <div class="stats-icon" style="background: linear-gradient(135deg, #ff6b6b, #ee5a52);">
+                        <i class="bi bi-tags"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" id="categories-count">{{ stats.categories }}</h3>
+                        <p class="stats-label">Catégories</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alert-container"></div>
+
+        <!-- Actions de génération -->
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-people me-2"></i>Générer des Utilisateurs
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Créez des utilisateurs de test avec différents rôles (étudiants, vendeurs, livreurs).</p>
+                        
+                        <div class="mb-3">
+                            <label for="user-count" class="form-label">Nombre d'utilisateurs :</label>
+                            <select class="form-select" id="user-count">
+                                <option value="5">5 utilisateurs</option>
+                                <option value="10" selected>10 utilisateurs</option>
+                                <option value="20">20 utilisateurs</option>
+                                <option value="50">50 utilisateurs</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-primary w-100" onclick="generateData('users')">
+                            <i class="bi bi-person-plus me-2"></i>Générer les Utilisateurs
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-box-seam me-2"></i>Générer des Produits
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Créez des produits de test dans différentes catégories avec des prix variés.</p>
+                        
+                        <div class="mb-3">
+                            <label for="product-count" class="form-label">Nombre de produits :</label>
+                            <select class="form-select" id="product-count">
+                                <option value="10">10 produits</option>
+                                <option value="20" selected>20 produits</option>
+                                <option value="50">50 produits</option>
+                                <option value="100">100 produits</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-success w-100" onclick="generateData('products')">
+                            <i class="bi bi-plus-circle me-2"></i>Générer les Produits
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-cart-check me-2"></i>Générer des Commandes
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Créez des commandes de test avec différents statuts et articles.</p>
+                        
+                        <div class="mb-3">
+                            <label for="order-count" class="form-label">Nombre de commandes :</label>
+                            <select class="form-select" id="order-count">
+                                <option value="10">10 commandes</option>
+                                <option value="15" selected>15 commandes</option>
+                                <option value="30">30 commandes</option>
+                                <option value="50">50 commandes</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn btn-info w-100" onclick="generateData('orders')">
+                            <i class="bi bi-cart-plus me-2"></i>Générer les Commandes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-trash me-2"></i>Réinitialiser les Données
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Supprimez toutes les données de test (conserve les comptes admin).</p>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Attention :</strong> Cette action supprimera toutes les données de test !
+                        </div>
+
+                        <button type="button" class="btn btn-danger w-100" onclick="resetData()">
+                            <i class="bi bi-trash me-2"></i>Réinitialiser les Données
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-lightning me-2"></i>Actions Rapides
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="generateAll()">
+                            <i class="bi bi-magic me-2"></i>Tout Générer
+                        </button>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="/admin" class="btn btn-outline-success w-100">
+                            <i class="bi bi-gear me-2"></i>Interface Admin
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="/client" class="btn btn-outline-info w-100">
+                            <i class="bi bi-shop me-2"></i>Interface Client
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAlert(message, type = 'success') {
+    const alertContainer = document.getElementById('alert-container');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    alertContainer.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
+function updateStats() {
+    // Refresh page to update stats
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+}
+
+function generateData(type) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Génération...';
+    button.disabled = true;
+    
+    let count, endpoint;
+    
+    switch(type) {
+        case 'users':
+            count = document.getElementById('user-count').value;
+            endpoint = `/test-data/generate-users/${count}`;
+            break;
+        case 'products':
+            count = document.getElementById('product-count').value;
+            endpoint = `/test-data/generate-products/${count}`;
+            break;
+        case 'orders':
+            count = document.getElementById('order-count').value;
+            endpoint = `/test-data/generate-orders/${count}`;
+            break;
+    }
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            updateStats();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Erreur lors de la génération des données', 'danger');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function resetData() {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer toutes les données de test ?')) {
+        return;
+    }
+    
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Suppression...';
+    button.disabled = true;
+    
+    fetch('/test-data/reset-data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            updateStats();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert('Erreur lors de la suppression des données', 'danger');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function generateAll() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Génération complète...';
+    button.disabled = true;
+    
+    // Generate in sequence: users -> products -> orders
+    Promise.resolve()
+        .then(() => fetch('/test-data/generate-users/15', { method: 'POST' }))
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message);
+            return fetch('/test-data/generate-products/30', { method: 'POST' });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message);
+            return fetch('/test-data/generate-orders/20', { method: 'POST' });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Toutes les données ont été générées avec succès !', 'success');
+                updateStats();
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch(error => {
+            showAlert('Erreur lors de la génération complète: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+}
+</script>
+{% endblock %}
