@@ -96,6 +96,21 @@ class UtilisateurRepository extends ServiceEntityRepository implements PasswordU
     }
 
     /**
+     * Compte les nouveaux utilisateurs cette semaine
+     */
+    public function countNewThisWeek(): int
+    {
+        $weekAgo = new \DateTime('-1 week');
+        
+        return $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->andWhere('u.dateCreation >= :date')
+            ->setParameter('date', $weekAgo)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
      * Recherche d'utilisateurs par nom, prénom ou email
      * @return Utilisateur[]
      */

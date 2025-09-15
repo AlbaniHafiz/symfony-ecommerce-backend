@@ -1,0 +1,274 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Gestion des Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h2 mb-0">
+            <i class="bi bi-people me-2"></i>Gestion des Utilisateurs
+        </h1>
+        <p class="text-muted mb-0">Gérez les comptes utilisateurs de la plateforme</p>
+    </div>
+    <a href="{{ path('admin_utilisateurs_new') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus me-2"></i>Nouvel Utilisateur
+    </a>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.total }}</h3>
+                <p class="stats-label">Total</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--admin-success), #00d2d3);">
+                <i class="bi bi-mortarboard"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.etudiants }}</h3>
+                <p class="stats-label">Étudiants</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--admin-info), #0abde3);">
+                <i class="bi bi-shop"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.vendeurs }}</h3>
+                <p class="stats-label">Vendeurs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--admin-warning), #ff9f43);">
+                <i class="bi bi-truck"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.livreurs }}</h3>
+                <p class="stats-label">Livreurs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-icon" style="background: linear-gradient(135deg, var(--admin-danger), #ff6b6b);">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="stats-content">
+                <h3 class="stats-number">{{ stats.admins }}</h3>
+                <p class="stats-label">Admins</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres et recherche -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">
+                    <i class="bi bi-search me-1"></i>Recherche
+                </label>
+                <input type="text" id="search" name="search" class="form-control" 
+                       placeholder="Nom, prénom ou email..." 
+                       value="{{ filters.search }}">
+            </div>
+            <div class="col-md-4">
+                <label for="role" class="form-label">
+                    <i class="bi bi-person-badge me-1"></i>Rôle
+                </label>
+                <select id="role" name="role" class="form-select">
+                    <option value="">Tous les rôles</option>
+                    <option value="ROLE_ETUDIANT" {{ filters.role == 'ROLE_ETUDIANT' ? 'selected' : '' }}>Étudiant</option>
+                    <option value="ROLE_VENDEUR" {{ filters.role == 'ROLE_VENDEUR' ? 'selected' : '' }}>Vendeur</option>
+                    <option value="ROLE_LIVREUR" {{ filters.role == 'ROLE_LIVREUR' ? 'selected' : '' }}>Livreur</option>
+                    <option value="ROLE_ADMIN" {{ filters.role == 'ROLE_ADMIN' ? 'selected' : '' }}>Admin</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Filtrer
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des utilisateurs -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-list me-2"></i>Liste des utilisateurs ({{ totalItems }} résultats)
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if utilisateurs %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Contact</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Inscription</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for utilisateur in utilisateurs %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-person text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ utilisateur.nomComplet }}</h6>
+                                            <small class="text-muted">ID: {{ utilisateur.id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="small">
+                                            <i class="bi bi-envelope me-1"></i>{{ utilisateur.email }}
+                                        </div>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-telephone me-1"></i>{{ utilisateur.telephone }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% for role in utilisateur.roles %}
+                                        {% if role == 'ROLE_ADMIN' %}
+                                            <span class="badge bg-danger">Admin</span>
+                                        {% elseif role == 'ROLE_VENDEUR' %}
+                                            <span class="badge bg-info">Vendeur</span>
+                                        {% elseif role == 'ROLE_LIVREUR' %}
+                                            <span class="badge bg-warning">Livreur</span>
+                                        {% elseif role == 'ROLE_ETUDIANT' %}
+                                            <span class="badge bg-success">Étudiant</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    <button type="button"
+                                            class="btn btn-sm {{ utilisateur.actif ? 'btn-success' : 'btn-outline-secondary' }}"
+                                            onclick="toggleUserStatus({{ utilisateur.id }}, {{ utilisateur.actif ? 'false' : 'true' }})">
+                                        <i class="bi bi-{{ utilisateur.actif ? 'check-circle' : 'x-circle' }}"></i>
+                                        {{ utilisateur.actif ? 'Actif' : 'Inactif' }}
+                                    </button>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        {{ utilisateur.dateCreation|date('d/m/Y') }}
+                                    </div>
+                                    <div class="small text-muted">
+                                        {{ utilisateur.dateCreation|date('H:i') }}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ path('admin_utilisateurs_show', {'id': utilisateur.id}) }}" 
+                                           class="btn btn-outline-primary"
+                                           title="Voir les détails">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{{ path('admin_utilisateurs_edit', {'id': utilisateur.id}) }}" 
+                                           class="btn btn-outline-secondary"
+                                           title="Modifier">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-person-x display-1 text-muted"></i>
+                <h4 class="mt-3">Aucun utilisateur trouvé</h4>
+                <p class="text-muted">Essayez de modifier vos critères de recherche</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if totalPages > 1 %}
+    <nav aria-label="Navigation des utilisateurs" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if currentPage > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ path('admin_utilisateurs_index', filters|merge({'page': currentPage - 1})) }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for page in 1..totalPages %}
+                {% if page == currentPage %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page }}</span>
+                    </li>
+                {% elseif page <= currentPage + 2 and page >= currentPage - 2 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('admin_utilisateurs_index', filters|merge({'page': page})) }}">{{ page }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if currentPage < totalPages %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ path('admin_utilisateurs_index', filters|merge({'page': currentPage + 1})) }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+
+<script>
+function toggleUserStatus(userId, newStatus) {
+    fetch(`/admin/utilisateurs/${userId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la modification du statut');
+        }
+    })
+    .catch(error => {
+        alert('Erreur de communication avec le serveur');
+    });
+}
+</script>
+{% endblock %}
