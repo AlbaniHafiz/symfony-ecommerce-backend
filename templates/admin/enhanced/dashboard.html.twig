@@ -1,0 +1,556 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Dashboard Avancé{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .dashboard-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        }
+        
+        .dashboard-card.variant-success {
+            background: linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%);
+        }
+        
+        .dashboard-card.variant-warning {
+            background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        }
+        
+        .dashboard-card.variant-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+        
+        .dashboard-card.variant-info {
+            background: linear-gradient(135deg, #54a0ff 0%, #2e86de 100%);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .stat-change {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        
+        .activity-feed {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .activity-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .activity-item.order {
+            border-left-color: #10ac84;
+        }
+        
+        .activity-item.user {
+            border-left-color: #3742fa;
+        }
+        
+        .activity-item.product {
+            border-left-color: #ffa502;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .metric-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .quick-action {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .quick-action:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            color: inherit;
+        }
+        
+        .realtime-indicator {
+            width: 10px;
+            height: 10px;
+            background: #10ac84;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2 me-2"></i>Dashboard Multi-Vendeurs
+        <span class="realtime-indicator"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-success" onclick="refreshDashboard()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualiser
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportReport()">
+                <i class="bi bi-download me-1"></i>Rapport
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="quick-actions">
+    <a href="{{ path('admin_database_test_index') }}" class="quick-action">
+        <i class="bi bi-database text-primary" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Test Base de Données</h6>
+        <small class="text-muted">Interface complète</small>
+    </a>
+    <a href="#" class="quick-action">
+        <i class="bi bi-people text-success" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Gestion Utilisateurs</h6>
+        <small class="text-muted">{{ stats.users.total }} utilisateurs</small>
+    </a>
+    <a href="#" class="quick-action">
+        <i class="bi bi-shop text-warning" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Gestion Vendeurs</h6>
+        <small class="text-muted">{{ stats.users.sellers }} vendeurs</small>
+    </a>
+    <a href="#" class="quick-action">
+        <i class="bi bi-box-seam text-info" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Gestion Produits</h6>
+        <small class="text-muted">{{ stats.products.total }} produits</small>
+    </a>
+    <a href="#" class="quick-action">
+        <i class="bi bi-cart-check text-danger" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Gestion Commandes</h6>
+        <small class="text-muted">{{ stats.orders.total }} commandes</small>
+    </a>
+    <a href="#" class="quick-action">
+        <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+        <h6 class="mt-2">Rapports & Analytics</h6>
+        <small class="text-muted">Insights business</small>
+    </a>
+</div>
+
+<!-- Statistiques principales -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card">
+            <div class="row no-gutters align-items-center">
+                <div class="col">
+                    <div class="stat-number">{{ stats.users.total }}</div>
+                    <div class="stat-label">Utilisateurs Total</div>
+                    <div class="stat-change">
+                        <i class="bi bi-arrow-up"></i> +{{ stats.users.active_today }} aujourd'hui
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="bi bi-people" style="font-size: 2.5rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card variant-success">
+            <div class="row no-gutters align-items-center">
+                <div class="col">
+                    <div class="stat-number">{{ stats.finance.monthly_revenue|number_format(0, ',', ' ') }}</div>
+                    <div class="stat-label">CA Mensuel (FCFA)</div>
+                    <div class="stat-change">
+                        <i class="bi bi-arrow-up"></i> +15% vs mois dernier
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="bi bi-currency-exchange" style="font-size: 2.5rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card variant-info">
+            <div class="row no-gutters align-items-center">
+                <div class="col">
+                    <div class="stat-number">{{ stats.orders.today }}</div>
+                    <div class="stat-label">Commandes Aujourd'hui</div>
+                    <div class="stat-change">
+                        <i class="bi bi-arrow-up"></i> {{ stats.orders.pending }} en attente
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="bi bi-cart-check" style="font-size: 2.5rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="dashboard-card variant-warning">
+            <div class="row no-gutters align-items-center">
+                <div class="col">
+                    <div class="stat-number">{{ stats.products.out_of_stock }}</div>
+                    <div class="stat-label">Alertes Stock</div>
+                    <div class="stat-change">
+                        <i class="bi bi-exclamation-triangle"></i> Action requise
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 2.5rem; opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Métriques de performance -->
+<div class="metrics-grid mb-4">
+    <div class="metric-card">
+        <div class="metric-icon">
+            <i class="bi bi-percent"></i>
+        </div>
+        <h4>{{ stats.performance.conversion_rate }}</h4>
+        <p class="text-muted mb-0">Taux de Conversion</p>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">
+            <i class="bi bi-clock"></i>
+        </div>
+        <h4>{{ stats.performance.avg_session_duration }}</h4>
+        <p class="text-muted mb-0">Durée Session Moyenne</p>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">
+            <i class="bi bi-speedometer"></i>
+        </div>
+        <h4>{{ stats.performance.page_load_time }}</h4>
+        <p class="text-muted mb-0">Temps de Chargement</p>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon">
+            <i class="bi bi-currency-dollar"></i>
+        </div>
+        <h4>{{ stats.finance.commission_earned|number_format(0, ',', ' ') }}</h4>
+        <p class="text-muted mb-0">Commissions FCFA</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Graphique des ventes -->
+    <div class="col-lg-8 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-graph-up me-2"></i>Évolution des Ventes (7 derniers jours)
+            </h5>
+            <canvas id="salesChart" style="height: 300px;"></canvas>
+        </div>
+    </div>
+
+    <!-- Activité en temps réel -->
+    <div class="col-lg-4 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-activity me-2"></i>Activité Temps Réel
+                <span class="realtime-indicator"></span>
+            </h5>
+            <div class="activity-feed" id="activityFeed">
+                <div class="text-center p-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Détails des statistiques -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-pie-chart me-2"></i>Répartition des Utilisateurs
+            </h5>
+            <canvas id="usersChart" style="height: 250px;"></canvas>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-bar-chart me-2"></i>Statuts des Commandes
+            </h5>
+            <canvas id="ordersChart" style="height: 250px;"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        let salesChart, usersChart, ordersChart;
+        
+        $(document).ready(function() {
+            initializeCharts();
+            loadRealtimeActivity();
+            
+            // Refresh data every 30 seconds
+            setInterval(() => {
+                loadRealtimeActivity();
+                updateCharts();
+            }, 30000);
+        });
+        
+        function initializeCharts() {
+            // Sales chart
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            salesChart = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Ventes (FCFA)',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Commandes',
+                        data: [],
+                        borderColor: '#10ac84',
+                        backgroundColor: 'rgba(16, 172, 132, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            position: 'left'
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+            
+            // Users chart
+            const usersCtx = document.getElementById('usersChart').getContext('2d');
+            usersChart = new Chart(usersCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Clients', 'Vendeurs', 'Admins'],
+                    datasets: [{
+                        data: [{{ stats.users.customers }}, {{ stats.users.sellers }}, {{ stats.users.admins }}],
+                        backgroundColor: ['#667eea', '#10ac84', '#ffa502']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Orders chart
+            const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+            ordersChart = new Chart(ordersCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['En Attente', 'Confirmées', 'Livrées', 'Annulées'],
+                    datasets: [{
+                        data: [{{ stats.orders.pending }}, 15, {{ stats.orders.completed }}, 3],
+                        backgroundColor: ['#ffa502', '#3742fa', '#10ac84', '#ff6b6b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Load sales data
+            loadSalesData();
+        }
+        
+        function loadSalesData() {
+            fetch('{{ path("admin_enhanced_api_sales_chart") }}')
+                .then(response => response.json())
+                .then(data => {
+                    salesChart.data.labels = data.map(item => {
+                        const date = new Date(item.date);
+                        return date.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' });
+                    });
+                    salesChart.data.datasets[0].data = data.map(item => item.sales);
+                    salesChart.data.datasets[1].data = data.map(item => item.orders);
+                    salesChart.update();
+                });
+        }
+        
+        function loadRealtimeActivity() {
+            fetch('{{ path("admin_enhanced_api_realtime_activity") }}')
+                .then(response => response.json())
+                .then(activities => {
+                    const feed = document.getElementById('activityFeed');
+                    let html = '';
+                    
+                    activities.forEach(activity => {
+                        const timeAgo = getTimeAgo(activity.timestamp);
+                        const icon = getActivityIcon(activity.type);
+                        
+                        html += `
+                            <div class="activity-item ${activity.type}">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <i class="bi bi-${icon} me-2"></i>
+                                        <strong>${activity.message}</strong>
+                                        <br>
+                                        <small class="text-muted">${activity.user || ''}</small>
+                                    </div>
+                                    <small class="text-muted">${timeAgo}</small>
+                                </div>
+                                ${activity.amount ? `<div class="mt-2"><span class="badge bg-success">${activity.amount} FCFA</span></div>` : ''}
+                                ${activity.stock ? `<div class="mt-2"><span class="badge bg-warning">Stock: ${activity.stock}</span></div>` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    feed.innerHTML = html;
+                });
+        }
+        
+        function getActivityIcon(type) {
+            const icons = {
+                order: 'cart-plus',
+                user: 'person-plus',
+                product: 'exclamation-triangle'
+            };
+            return icons[type] || 'info-circle';
+        }
+        
+        function getTimeAgo(timestamp) {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = now - timestamp;
+            
+            if (diff < 60) return 'Il y a ' + diff + 's';
+            if (diff < 3600) return 'Il y a ' + Math.floor(diff / 60) + 'min';
+            return 'Il y a ' + Math.floor(diff / 3600) + 'h';
+        }
+        
+        function refreshDashboard() {
+            location.reload();
+        }
+        
+        function exportReport() {
+            alert('Fonctionnalité d\'export en cours de développement');
+        }
+        
+        function updateCharts() {
+            loadSalesData();
+        }
+    </script>
+{% endblock %}

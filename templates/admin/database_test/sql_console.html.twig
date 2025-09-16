@@ -1,0 +1,807 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Console SQL{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+    <style>
+        .sql-editor {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .CodeMirror {
+            height: 300px;
+            font-size: 14px;
+        }
+        
+        .query-history {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .history-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .history-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        .query-result {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .result-table {
+            max-height: 500px;
+            overflow: auto;
+        }
+        
+        .query-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .predefined-queries {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .query-template {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .query-template:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        .execution-time {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .error-message {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .success-message {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: #2f855a;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .query-builder {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .builder-section {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .builder-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-terminal me-2"></i>Console SQL
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ path('admin_database_test_index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+            <button type="button" class="btn btn-sm btn-danger" onclick="clearConsole()">
+                <i class="bi bi-trash me-1"></i>Effacer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques des requêtes -->
+<div class="query-stats">
+    <div class="row">
+        <div class="col-md-3 text-center">
+            <h4 id="queriesExecuted">0</h4>
+            <p class="mb-0">Requêtes Exécutées</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <h4 id="avgExecutionTime">0ms</h4>
+            <p class="mb-0">Temps Moyen</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <h4 id="rowsAffected">0</h4>
+            <p class="mb-0">Lignes Affectées</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <h4 id="errorCount">0</h4>
+            <p class="mb-0">Erreurs</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Console SQL principale -->
+    <div class="col-lg-8">
+        <!-- Onglets -->
+        <ul class="nav nav-tabs mb-3" id="consoleTabs">
+            <li class="nav-item">
+                <button class="nav-link active" id="editor-tab" data-bs-toggle="tab" data-bs-target="#editor" type="button">
+                    <i class="bi bi-code-square me-1"></i>Éditeur SQL
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="builder-tab" data-bs-toggle="tab" data-bs-target="#builder" type="button">
+                    <i class="bi bi-tools me-1"></i>Générateur de requêtes
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="consoleTabsContent">
+            <!-- Éditeur SQL -->
+            <div class="tab-pane fade show active" id="editor">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5 class="mb-0">Éditeur SQL</h5>
+                            </div>
+                            <div class="col-auto">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-success" onclick="executeQuery()">
+                                        <i class="bi bi-play-fill me-1"></i>Exécuter
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="formatQuery()">
+                                        <i class="bi bi-code me-1"></i>Formater
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning" onclick="explainQuery()">
+                                        <i class="bi bi-info-circle me-1"></i>Expliquer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="sql-editor">
+                            <textarea id="sqlEditor" placeholder="Tapez votre requête SQL ici...">SELECT * FROM utilisateur LIMIT 10;</textarea>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Seules les requêtes SELECT sont autorisées pour des raisons de sécurité
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <kbd>Ctrl+Enter</kbd> pour exécuter
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Résultats -->
+                <div id="queryResults"></div>
+            </div>
+
+            <!-- Générateur de requêtes -->
+            <div class="tab-pane fade" id="builder">
+                <div class="query-builder">
+                    <h5 class="mb-3">Générateur de requêtes SELECT</h5>
+                    
+                    <div class="builder-section">
+                        <label class="form-label"><strong>Tables</strong></label>
+                        <select class="form-select" id="builderTable" onchange="updateBuilderColumns()">
+                            <option value="">Sélectionner une table</option>
+                            <option value="utilisateur">utilisateur</option>
+                            <option value="produit">produit</option>
+                            <option value="commande">commande</option>
+                            <option value="categorie">categorie</option>
+                            <option value="panier">panier</option>
+                            <option value="paiement">paiement</option>
+                            <option value="livraison">livraison</option>
+                        </select>
+                    </div>
+                    
+                    <div class="builder-section">
+                        <label class="form-label"><strong>Colonnes</strong></label>
+                        <div id="builderColumns">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleAllColumns()">
+                                <label class="form-check-label" for="selectAll">
+                                    <strong>Sélectionner tout (*)</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="builder-section">
+                        <label class="form-label"><strong>Conditions WHERE</strong></label>
+                        <div id="builderConditions">
+                            <div class="row mb-2">
+                                <div class="col-md-3">
+                                    <select class="form-select form-select-sm" id="conditionColumn">
+                                        <option value="">Colonne</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <select class="form-select form-select-sm">
+                                        <option value="=">=</option>
+                                        <option value="!=">!=</option>
+                                        <option value="<"><</option>
+                                        <option value=">">></option>
+                                        <option value="LIKE">LIKE</option>
+                                        <option value="IN">IN</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control form-control-sm" placeholder="Valeur">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-sm btn-success" onclick="addCondition()">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="builder-section">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>ORDER BY</strong></label>
+                                <div class="row">
+                                    <div class="col-8">
+                                        <select class="form-select form-select-sm" id="orderColumn">
+                                            <option value="">Colonne</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4">
+                                        <select class="form-select form-select-sm" id="orderDirection">
+                                            <option value="ASC">ASC</option>
+                                            <option value="DESC">DESC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label"><strong>LIMIT</strong></label>
+                                <input type="number" class="form-control form-control-sm" id="limitValue" placeholder="100" min="1" max="1000">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-end">
+                        <button type="button" class="btn btn-primary" onclick="generateQuery()">
+                            <i class="bi bi-gear me-1"></i>Générer la requête
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="executeBuiltQuery()">
+                            <i class="bi bi-play-fill me-1"></i>Exécuter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau latéral -->
+    <div class="col-lg-4">
+        <!-- Requêtes prédéfinies -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bookmark me-2"></i>Requêtes Prédéfinies
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="predefined-queries">
+                    <div class="query-template" onclick="loadTemplate('users')">
+                        <strong>Tous les utilisateurs</strong>
+                        <small class="d-block text-muted">SELECT * FROM utilisateur</small>
+                    </div>
+                    <div class="query-template" onclick="loadTemplate('active_products')">
+                        <strong>Produits actifs</strong>
+                        <small class="d-block text-muted">SELECT * FROM produit WHERE actif = 1</small>
+                    </div>
+                    <div class="query-template" onclick="loadTemplate('recent_orders')">
+                        <strong>Commandes récentes</strong>
+                        <small class="d-block text-muted">SELECT * FROM commande ORDER BY dateCreation DESC LIMIT 20</small>
+                    </div>
+                    <div class="query-template" onclick="loadTemplate('user_stats')">
+                        <strong>Statistiques utilisateurs</strong>
+                        <small class="d-block text-muted">SELECT COUNT(*) as total, roles FROM utilisateur GROUP BY roles</small>
+                    </div>
+                    <div class="query-template" onclick="loadTemplate('product_categories')">
+                        <strong>Produits par catégorie</strong>
+                        <small class="d-block text-muted">SELECT c.nom as categorie, COUNT(p.id) as produits FROM categorie c LEFT JOIN produit p...</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historique des requêtes -->
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>Historique
+                        </h5>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearHistory()">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="query-history" id="queryHistory">
+                    <p class="text-muted text-center">Aucune requête dans l'historique</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/sql-hint.min.js"></script>
+    <script>
+        let sqlEditor;
+        let queryHistory = [];
+        let executionStats = {
+            executed: 0,
+            totalTime: 0,
+            rowsAffected: 0,
+            errors: 0
+        };
+        
+        $(document).ready(function() {
+            // Initialize CodeMirror
+            sqlEditor = CodeMirror.fromTextArea(document.getElementById('sqlEditor'), {
+                mode: 'text/x-sql',
+                theme: 'default',
+                lineNumbers: true,
+                autoCloseBrackets: true,
+                matchBrackets: true,
+                indentWithTabs: true,
+                smartIndent: true,
+                extraKeys: {
+                    "Ctrl-Enter": executeQuery,
+                    "Ctrl-Space": "autocomplete"
+                },
+                hintOptions: {
+                    tables: {
+                        utilisateur: ['id', 'nom', 'prenom', 'email', 'telephone', 'roles', 'actif'],
+                        produit: ['id', 'nom', 'description', 'prix', 'stock', 'actif'],
+                        commande: ['id', 'utilisateur_id', 'statut', 'total', 'dateCreation'],
+                        categorie: ['id', 'nom', 'description', 'actif']
+                    }
+                }
+            });
+            
+            // Load saved history
+            loadHistoryFromStorage();
+            updateStats();
+        });
+        
+        function executeQuery() {
+            const query = sqlEditor.getValue().trim();
+            if (!query) {
+                alert('Veuillez saisir une requête SQL');
+                return;
+            }
+            
+            const startTime = Date.now();
+            
+            // Clear previous results
+            document.getElementById('queryResults').innerHTML = '';
+            
+            // Show loading
+            showLoading();
+            
+            fetch('{{ path("admin_database_test_api_execute_query") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    query: query
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const executionTime = Date.now() - startTime;
+                hideLoading();
+                
+                if (data.error) {
+                    showError(data.error);
+                    executionStats.errors++;
+                } else {
+                    showResults(data.data, executionTime, data.rowCount);
+                    executionStats.rowsAffected += data.rowCount;
+                }
+                
+                executionStats.executed++;
+                executionStats.totalTime += executionTime;
+                
+                addToHistory(query, executionTime, data.error || null);
+                updateStats();
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Erreur de connexion: ' + error.message);
+                executionStats.errors++;
+                updateStats();
+            });
+        }
+        
+        function showResults(data, executionTime, rowCount) {
+            const resultsDiv = document.getElementById('queryResults');
+            
+            let html = `
+                <div class="success-message">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Requête exécutée avec succès</strong>
+                        </div>
+                        <div class="col-auto">
+                            <span class="execution-time">${executionTime}ms</span>
+                            <span class="ms-2 badge bg-success">${rowCount} ligne(s)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="query-result">
+            `;
+            
+            if (data.length === 0) {
+                html += '<p class="text-muted text-center">Aucun résultat trouvé</p>';
+            } else {
+                html += `
+                    <div class="result-table">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                `;
+                
+                // Headers
+                Object.keys(data[0]).forEach(key => {
+                    html += `<th>${key}</th>`;
+                });
+                
+                html += '</tr></thead><tbody>';
+                
+                // Data rows
+                data.forEach(row => {
+                    html += '<tr>';
+                    Object.values(row).forEach(value => {
+                        if (value === null) {
+                            html += '<td><span class="text-muted font-italic">NULL</span></td>';
+                        } else if (typeof value === 'boolean') {
+                            html += `<td><span class="badge bg-${value ? 'success' : 'danger'}">${value ? 'TRUE' : 'FALSE'}</span></td>`;
+                        } else if (String(value).length > 50) {
+                            html += `<td title="${value}">${String(value).substring(0, 47)}...</td>`;
+                        } else {
+                            html += `<td>${value}</td>`;
+                        }
+                    });
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+        
+        function showError(error) {
+            const resultsDiv = document.getElementById('queryResults');
+            resultsDiv.innerHTML = `
+                <div class="error-message">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Erreur SQL:</strong><br>
+                    <code>${error}</code>
+                </div>
+            `;
+        }
+        
+        function showLoading() {
+            const resultsDiv = document.getElementById('queryResults');
+            resultsDiv.innerHTML = `
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Exécution en cours...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Exécution de la requête...</p>
+                </div>
+            `;
+        }
+        
+        function hideLoading() {
+            // Loading is replaced by results or error
+        }
+        
+        function addToHistory(query, executionTime, error) {
+            const historyItem = {
+                query: query,
+                timestamp: new Date(),
+                executionTime: executionTime,
+                error: error
+            };
+            
+            queryHistory.unshift(historyItem);
+            if (queryHistory.length > 20) {
+                queryHistory = queryHistory.slice(0, 20);
+            }
+            
+            updateHistoryDisplay();
+            saveHistoryToStorage();
+        }
+        
+        function updateHistoryDisplay() {
+            const historyDiv = document.getElementById('queryHistory');
+            
+            if (queryHistory.length === 0) {
+                historyDiv.innerHTML = '<p class="text-muted text-center">Aucune requête dans l\'historique</p>';
+                return;
+            }
+            
+            let html = '';
+            queryHistory.forEach((item, index) => {
+                const statusIcon = item.error ? 'exclamation-triangle text-danger' : 'check-circle text-success';
+                html += `
+                    <div class="history-item" onclick="loadFromHistory(${index})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <i class="bi bi-${statusIcon} me-2"></i>
+                                <small class="text-muted">${item.timestamp.toLocaleTimeString()}</small>
+                            </div>
+                            <span class="execution-time">${item.executionTime}ms</span>
+                        </div>
+                        <code class="d-block mt-1" style="font-size: 0.8em;">${item.query.substring(0, 60)}${item.query.length > 60 ? '...' : ''}</code>
+                    </div>
+                `;
+            });
+            
+            historyDiv.innerHTML = html;
+        }
+        
+        function loadFromHistory(index) {
+            const item = queryHistory[index];
+            sqlEditor.setValue(item.query);
+        }
+        
+        function updateStats() {
+            document.getElementById('queriesExecuted').textContent = executionStats.executed;
+            document.getElementById('avgExecutionTime').textContent = 
+                executionStats.executed > 0 ? Math.round(executionStats.totalTime / executionStats.executed) + 'ms' : '0ms';
+            document.getElementById('rowsAffected').textContent = executionStats.rowsAffected;
+            document.getElementById('errorCount').textContent = executionStats.errors;
+        }
+        
+        function loadTemplate(templateName) {
+            const templates = {
+                users: 'SELECT * FROM utilisateur ORDER BY dateCreation DESC LIMIT 20;',
+                active_products: 'SELECT * FROM produit WHERE actif = 1 ORDER BY nom;',
+                recent_orders: 'SELECT * FROM commande ORDER BY dateCreation DESC LIMIT 20;',
+                user_stats: 'SELECT roles, COUNT(*) as total FROM utilisateur GROUP BY roles;',
+                product_categories: 'SELECT c.nom as categorie, COUNT(p.id) as produits FROM categorie c LEFT JOIN produit p ON c.id = p.categorie_id GROUP BY c.id;'
+            };
+            
+            if (templates[templateName]) {
+                sqlEditor.setValue(templates[templateName]);
+                document.getElementById('editor-tab').click();
+            }
+        }
+        
+        function formatQuery() {
+            // Simple SQL formatting
+            let query = sqlEditor.getValue();
+            query = query.replace(/\s+/g, ' ');
+            query = query.replace(/\s*(SELECT|FROM|WHERE|ORDER BY|GROUP BY|HAVING|LIMIT)\s+/gi, '\n$1 ');
+            query = query.replace(/\s*,\s*/g, ',\n  ');
+            sqlEditor.setValue(query.trim());
+        }
+        
+        function explainQuery() {
+            const query = sqlEditor.getValue().trim();
+            if (!query) return;
+            
+            const explainQuery = 'EXPLAIN ' + query;
+            sqlEditor.setValue(explainQuery);
+            executeQuery();
+        }
+        
+        function clearConsole() {
+            if (confirm('Êtes-vous sûr de vouloir effacer la console?')) {
+                document.getElementById('queryResults').innerHTML = '';
+                sqlEditor.setValue('');
+            }
+        }
+        
+        function clearHistory() {
+            if (confirm('Êtes-vous sûr de vouloir effacer l\'historique?')) {
+                queryHistory = [];
+                updateHistoryDisplay();
+                saveHistoryToStorage();
+            }
+        }
+        
+        function saveHistoryToStorage() {
+            localStorage.setItem('sql_console_history', JSON.stringify(queryHistory));
+        }
+        
+        function loadHistoryFromStorage() {
+            const stored = localStorage.getItem('sql_console_history');
+            if (stored) {
+                queryHistory = JSON.parse(stored).map(item => ({
+                    ...item,
+                    timestamp: new Date(item.timestamp)
+                }));
+                updateHistoryDisplay();
+            }
+        }
+        
+        // Query builder functions
+        function updateBuilderColumns() {
+            const table = document.getElementById('builderTable').value;
+            const columnsDiv = document.getElementById('builderColumns');
+            const conditionColumn = document.getElementById('conditionColumn');
+            const orderColumn = document.getElementById('orderColumn');
+            
+            // Mock columns for demonstration
+            const tableColumns = {
+                utilisateur: ['id', 'nom', 'prenom', 'email', 'telephone', 'roles', 'actif'],
+                produit: ['id', 'nom', 'description', 'prix', 'stock', 'actif'],
+                commande: ['id', 'utilisateur_id', 'statut', 'total', 'dateCreation'],
+                categorie: ['id', 'nom', 'description', 'actif']
+            };
+            
+            const columns = tableColumns[table] || [];
+            
+            // Update columns checkboxes
+            let html = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleAllColumns()" checked>
+                    <label class="form-check-label" for="selectAll">
+                        <strong>Sélectionner tout (*)</strong>
+                    </label>
+                </div>
+            `;
+            
+            columns.forEach(column => {
+                html += `
+                    <div class="form-check">
+                        <input class="form-check-input column-checkbox" type="checkbox" id="col_${column}">
+                        <label class="form-check-label" for="col_${column}">
+                            ${column}
+                        </label>
+                    </div>
+                `;
+            });
+            
+            columnsDiv.innerHTML = html;
+            
+            // Update condition and order selects
+            conditionColumn.innerHTML = '<option value="">Colonne</option>';
+            orderColumn.innerHTML = '<option value="">Colonne</option>';
+            
+            columns.forEach(column => {
+                conditionColumn.innerHTML += `<option value="${column}">${column}</option>`;
+                orderColumn.innerHTML += `<option value="${column}">${column}</option>`;
+            });
+        }
+        
+        function toggleAllColumns() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.column-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+        
+        function generateQuery() {
+            const table = document.getElementById('builderTable').value;
+            if (!table) {
+                alert('Veuillez sélectionner une table');
+                return;
+            }
+            
+            let query = 'SELECT ';
+            
+            // Columns
+            const selectAll = document.getElementById('selectAll').checked;
+            if (selectAll) {
+                query += '*';
+            } else {
+                const selectedColumns = [];
+                document.querySelectorAll('.column-checkbox:checked').forEach(checkbox => {
+                    selectedColumns.push(checkbox.id.replace('col_', ''));
+                });
+                query += selectedColumns.length > 0 ? selectedColumns.join(', ') : '*';
+            }
+            
+            query += ` FROM ${table}`;
+            
+            // Limit
+            const limit = document.getElementById('limitValue').value;
+            if (limit) {
+                query += ` LIMIT ${limit}`;
+            }
+            
+            query += ';';
+            
+            sqlEditor.setValue(query);
+            document.getElementById('editor-tab').click();
+        }
+        
+        function executeBuiltQuery() {
+            generateQuery();
+            executeQuery();
+        }
+        
+        function addCondition() {
+            // Add functionality to build WHERE conditions
+            alert('Fonctionnalité en cours de développement');
+        }
+    </script>
+{% endblock %}

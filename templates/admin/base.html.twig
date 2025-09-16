@@ -277,6 +277,17 @@
                         <li><a class="dropdown-item" href="{{ path('admin_documentation_index') }}"><i class="bi bi-file-text me-2"></i>Documentation</a></li>
                     </ul>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ app.request.get('_route') starts with 'admin_database_test' ? 'active' : '' }}" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-database me-1"></i>Base de Données
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ path('admin_database_test_index') }}"><i class="bi bi-speedometer2 me-2"></i>Dashboard BD</a></li>
+                        <li><a class="dropdown-item" href="{{ path('admin_database_test_table_explorer') }}"><i class="bi bi-table me-2"></i>Explorateur Tables</a></li>
+                        <li><a class="dropdown-item" href="{{ path('admin_database_test_sql_console') }}"><i class="bi bi-terminal me-2"></i>Console SQL</a></li>
+                        <li><a class="dropdown-item" href="{{ path('admin_database_test_activity_monitor') }}"><i class="bi bi-activity me-2"></i>Moniteur Activité</a></li>
+                    </ul>
+                </li>
             </ul>
             
             <ul class="navbar-nav">

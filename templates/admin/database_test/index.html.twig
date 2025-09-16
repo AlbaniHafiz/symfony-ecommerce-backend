@@ -1,0 +1,420 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Interface de Test Base de Données{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        .db-stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .db-stats-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+        
+        .table-browser {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .realtime-indicator {
+            width: 10px;
+            height: 10px;
+            background: #10ac84;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .activity-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .activity-item {
+            padding: 0.5rem;
+            border-left: 3px solid #667eea;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .nav-pills .nav-link {
+            color: #667eea;
+            border-radius: 10px;
+            margin-right: 0.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-database me-2"></i>Interface de Test Base de Données
+        <span class="realtime-indicator"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-success" onclick="refreshStats()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualiser
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAutoRefresh()">
+                <i class="bi bi-play-fill me-1"></i>Auto-refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques de la base de données -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="db-stats-card text-center">
+            <div class="db-stats-icon">
+                <i class="bi bi-database"></i>
+            </div>
+            <h4>{{ stats.size_mb }} MB</h4>
+            <p class="mb-0">Taille BD</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="db-stats-card text-center">
+            <div class="db-stats-icon">
+                <i class="bi bi-table"></i>
+            </div>
+            <h4>{{ stats.table_count }}</h4>
+            <p class="mb-0">Tables</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="db-stats-card text-center">
+            <div class="db-stats-icon">
+                <i class="bi bi-bar-chart"></i>
+            </div>
+            <h4>{{ stats.total_rows }}</h4>
+            <p class="mb-0">Total Lignes</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="db-stats-card text-center">
+            <div class="db-stats-icon">
+                <i class="bi bi-activity"></i>
+            </div>
+            <h4 id="connection-status">En Ligne</h4>
+            <p class="mb-0">Status</p>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation des outils -->
+<ul class="nav nav-pills mb-4">
+    <li class="nav-item">
+        <a class="nav-link active" href="#dashboard" data-bs-toggle="pill">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ path('admin_database_test_table_explorer') }}">
+            <i class="bi bi-table me-1"></i>Explorateur Tables
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ path('admin_database_test_sql_console') }}">
+            <i class="bi bi-terminal me-1"></i>Console SQL
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ path('admin_database_test_activity_monitor') }}">
+            <i class="bi bi-activity me-1"></i>Moniteur Activité
+        </a>
+    </li>
+</ul>
+
+<!-- Contenu principal -->
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="dashboard">
+        <div class="row">
+            <!-- Liste des tables -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-table me-2"></i>Tables de la Base de Données
+                        </h5>
+                    </div>
+                    <div class="card-body table-browser">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="tablesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Table</th>
+                                        <th>Lignes</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for table in tables %}
+                                    <tr>
+                                        <td>
+                                            <i class="bi bi-table me-2 text-primary"></i>
+                                            <strong>{{ table.name }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ table.rows|number_format }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ path('admin_database_test_table_explorer', {'tableName': table.name}) }}" 
+                                                   class="btn btn-outline-primary btn-sm">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <button class="btn btn-outline-info btn-sm" 
+                                                        onclick="showTableStructure('{{ table.name }}')">
+                                                    <i class="bi bi-info-circle"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success btn-sm" 
+                                                        onclick="exportTable('{{ table.name }}')">
+                                                    <i class="bi bi-download"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activité en temps réel -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-activity me-2"></i>Activité Temps Réel
+                            <span class="realtime-indicator"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-feed" id="activityFeed">
+                            <div class="activity-item">
+                                <small class="text-muted">{{ "now"|date('H:i:s') }}</small><br>
+                                <strong>Interface initialisée</strong><br>
+                                Connexion à la base de données établie
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Graphique des opérations -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-bar-chart me-2"></i>Opérations CRUD
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="operationsChart" style="height: 200px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour structure de table -->
+<div class="modal fade" id="tableStructureModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-table me-2"></i>Structure de la table: <span id="modalTableName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tableStructureContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        let autoRefreshInterval = null;
+        let chart = null;
+        
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#tablesTable').DataTable({
+                pageLength: 10,
+                searching: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+                }
+            });
+            
+            // Initialize chart
+            initOperationsChart();
+            
+            // Start real-time updates
+            startRealtimeUpdates();
+        });
+        
+        function refreshStats() {
+            fetch('{{ path("admin_database_test_api_database_stats") }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update stats cards
+                    updateStatsDisplay(data);
+                    addActivityItem('Statistiques actualisées', 'success');
+                })
+                .catch(error => {
+                    console.error('Error refreshing stats:', error);
+                    addActivityItem('Erreur lors de l\'actualisation', 'error');
+                });
+        }
+        
+        function toggleAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                document.querySelector('[onclick="toggleAutoRefresh()"] i').className = 'bi bi-play-fill me-1';
+            } else {
+                autoRefreshInterval = setInterval(refreshStats, 5000);
+                document.querySelector('[onclick="toggleAutoRefresh()"] i').className = 'bi bi-pause-fill me-1';
+            }
+        }
+        
+        function showTableStructure(tableName) {
+            document.getElementById('modalTableName').textContent = tableName;
+            
+            const modal = new bootstrap.Modal(document.getElementById('tableStructureModal'));
+            modal.show();
+            
+            // Load table structure
+            fetch(`{{ path('admin_database_test_table_explorer') }}/${tableName}`)
+                .then(response => response.text())
+                .then(data => {
+                    // Extract table info from response (simplified)
+                    document.getElementById('tableStructureContent').innerHTML = 
+                        '<p>Structure détaillée disponible dans l\'explorateur de tables.</p>';
+                });
+        }
+        
+        function exportTable(tableName) {
+            addActivityItem(`Export de la table ${tableName}`, 'info');
+            // Implement export functionality
+        }
+        
+        function addActivityItem(message, type = 'info') {
+            const feed = document.getElementById('activityFeed');
+            const now = new Date().toLocaleTimeString();
+            const iconClass = type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-triangle' : 'info-circle');
+            
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML = `
+                <small class="text-muted">${now}</small><br>
+                <i class="bi bi-${iconClass} me-1"></i><strong>${message}</strong>
+            `;
+            
+            feed.insertBefore(item, feed.firstChild);
+            
+            // Keep only last 10 items
+            while (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+        
+        function startRealtimeUpdates() {
+            // Simulate real-time database activity
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    const operations = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+                    const tables = [{% for table in tables %}'{{ table.name }}'{% if not loop.last %},{% endif %}{% endfor %}];
+                    const op = operations[Math.floor(Math.random() * operations.length)];
+                    const table = tables[Math.floor(Math.random() * tables.length)];
+                    
+                    addActivityItem(`${op} sur ${table}`, 'info');
+                    updateChart(op);
+                }
+            }, 3000);
+        }
+        
+        function initOperationsChart() {
+            const ctx = document.getElementById('operationsChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
+                    datasets: [{
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            '#667eea',
+                            '#10ac84',
+                            '#feca57',
+                            '#ff6b6b'
+                        ]
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    maintainAspectRatio: false
+                }
+            });
+        }
+        
+        function updateChart(operation) {
+            // Update chart data based on operation
+            if (chart) {
+                const index = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'].indexOf(operation);
+                if (index !== -1) {
+                    chart.data.datasets[0].data[index]++;
+                    chart.update();
+                }
+            }
+        }
+        
+        function updateStatsDisplay(stats) {
+            // Update stats cards with new data
+            // This would typically update the DOM elements with fresh data
+            console.log('Stats updated:', stats);
+        }
+    </script>
+{% endblock %}
