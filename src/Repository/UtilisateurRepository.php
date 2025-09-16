@@ -100,4 +100,83 @@ class UtilisateurRepository extends ServiceEntityRepository implements PasswordU
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Find users with filters for management interface
+     * @return Utilisateur[]
+     */
+    public function findWithFilters(string $search = '', string $role = '', string $status = '', int $page = 1, int $limit = 20): array
+    {
+        $qb = $this->createQueryBuilder('u');
+
+        if (!empty($search)) {
+            $qb->andWhere('u.nom LIKE :search OR u.prenom LIKE :search OR u.email LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        if (!empty($role)) {
+            $qb->andWhere('u.roles LIKE :role')
+               ->setParameter('role', '%' . $role . '%');
+        }
+
+        if ($status === 'active') {
+            $qb->andWhere('u.actif = :actif')
+               ->setParameter('actif', true);
+        } elseif ($status === 'inactive') {
+            $qb->andWhere('u.actif = :actif')
+               ->setParameter('actif', false);
+        }
+
+        return $qb->orderBy('u.dateCreation', 'DESC')
+                  ->setFirstResult(($page - 1) * $limit)
+                  ->setMaxResults($limit)
+                  ->getQuery()
+                  ->getResult();
+    }
+
+    /**
+     * Count users with filters
+     */
+    public function countWithFilters(string $search = '', string $role = '', string $status = ''): int
+    {
+        $qb = $this->createQueryBuilder('u')
+                   ->select('COUNT(u.id)');
+
+        if (!empty($search)) {
+            $qb->andWhere('u.nom LIKE :search OR u.prenom LIKE :search OR u.email LIKE :search')
+               ->setParameter('search', '%' . $search . '%');
+        }
+
+        if (!empty($role)) {
+            $qb->andWhere('u.roles LIKE :role')
+               ->setParameter('role', '%' . $role . '%');
+        }
+
+        if ($status === 'active') {
+            $qb->andWhere('u.actif = :actif')
+               ->setParameter('actif', true);
+        } elseif ($status === 'inactive') {
+            $qb->andWhere('u.actif = :actif')
+               ->setParameter('actif', false);
+        }
+
+        return $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
+     * Search users for API endpoints
+     * @return Utilisateur[]
+     */
+    public function searchUsers(string $query, int $limit = 10): array
+    {
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.nom LIKE :query OR u.prenom LIKE :query OR u.email LIKE :query')
+            ->setParameter('query', '%' . $query . '%')
+            ->andWhere('u.actif = :actif')
+            ->setParameter('actif', true)
+            ->orderBy('u.nom', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }
