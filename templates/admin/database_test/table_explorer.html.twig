@@ -1,0 +1,433 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Explorateur de Tables{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        .table-selector {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .table-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .column-type {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            background: rgba(0,0,0,0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .data-table-container {
+            max-height: 600px;
+            overflow: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+        }
+        
+        .schema-diagram {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            min-height: 300px;
+        }
+        
+        .pagination-controls {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+        
+        .search-box {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            width: 100%;
+        }
+        
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .filter-chip {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .filter-chip:hover {
+            background: #5a6fd8;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-table me-2"></i>Explorateur de Tables
+        {% if selectedTable %}
+            - {{ selectedTable }}
+        {% endif %}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ path('admin_database_test_index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+            {% if selectedTable %}
+            <button type="button" class="btn btn-sm btn-success" onclick="refreshTableData()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualiser
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="exportTableData()">
+                <i class="bi bi-download me-1"></i>Exporter
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Sélecteur de table -->
+<div class="table-selector">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <label for="tableSelect" class="form-label"><strong>Sélectionner une table:</strong></label>
+            <select class="form-select" id="tableSelect" onchange="selectTable(this.value)">
+                <option value="">-- Choisir une table --</option>
+                {% for table in tables %}
+                <option value="{{ table.name }}" {% if selectedTable == table.name %}selected{% endif %}>
+                    {{ table.name }} ({{ table.rows|number_format }} lignes)
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="searchData" class="form-label"><strong>Rechercher dans les données:</strong></label>
+            <input type="text" class="search-box" id="searchData" placeholder="Rechercher..." onkeyup="filterTableData()">
+        </div>
+    </div>
+</div>
+
+{% if selectedTable %}
+<!-- Informations sur la table sélectionnée -->
+<div class="table-info-card">
+    <div class="row">
+        <div class="col-md-8">
+            <h4><i class="bi bi-table me-2"></i>{{ selectedTable }}</h4>
+            <p class="mb-1">Nombre de lignes: <strong>{{ tableData|length }}</strong></p>
+            <p class="mb-0">Colonnes: <strong>{{ tableInfo|length }}</strong></p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <button class="btn btn-light btn-sm" onclick="showTableStructure()">
+                    <i class="bi bi-info-circle me-1"></i>Structure
+                </button>
+                <button class="btn btn-light btn-sm" onclick="showTableIndexes()">
+                    <i class="bi bi-key me-1"></i>Index
+                </button>
+                <button class="btn btn-light btn-sm" onclick="showTableRelations()">
+                    <i class="bi bi-diagram-3 me-1"></i>Relations
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Onglets -->
+<ul class="nav nav-tabs mb-3" id="tableTabs">
+    <li class="nav-item">
+        <button class="nav-link active" id="data-tab" data-bs-toggle="tab" data-bs-target="#data" type="button">
+            <i class="bi bi-table me-1"></i>Données
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="structure-tab" data-bs-toggle="tab" data-bs-target="#structure" type="button">
+            <i class="bi bi-columns me-1"></i>Structure
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="schema-tab" data-bs-toggle="tab" data-bs-target="#schema" type="button">
+            <i class="bi bi-diagram-2 me-1"></i>Schéma
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="tableTabsContent">
+    <!-- Onglet Données -->
+    <div class="tab-pane fade show active" id="data">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="mb-0">Données de la table {{ selectedTable }}</h5>
+                    </div>
+                    <div class="col-auto">
+                        <div class="filter-chips" id="filterChips">
+                            <!-- Les filtres apparaîtront ici -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="data-table-container">
+                    {% if tableData is not empty %}
+                    <table class="table table-striped table-hover mb-0" id="dataTable">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                {% for column, value in tableData[0] %}
+                                <th>
+                                    {{ column }}
+                                    <button class="btn btn-link btn-sm p-0 ms-1" onclick="sortByColumn('{{ column }}')">
+                                        <i class="bi bi-arrow-down-up text-white"></i>
+                                    </button>
+                                </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in tableData %}
+                            <tr>
+                                {% for column, value in row %}
+                                <td>
+                                    {% if value is null %}
+                                        <span class="text-muted font-italic">NULL</span>
+                                    {% elseif value is same as(true) %}
+                                        <span class="badge bg-success">TRUE</span>
+                                    {% elseif value is same as(false) %}
+                                        <span class="badge bg-danger">FALSE</span>
+                                    {% elseif value|length > 50 %}
+                                        <span title="{{ value }}">{{ value|slice(0, 47) }}...</span>
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center p-4">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Aucune donnée trouvée dans cette table</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contrôles de pagination -->
+        <div class="pagination-controls">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <select class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                        <option value="20">20 par page</option>
+                        <option value="50">50 par page</option>
+                        <option value="100">100 par page</option>
+                    </select>
+                    <span class="ms-2 text-muted">Affichage de 1 à {{ tableData|length }} sur {{ tableData|length }} entrées</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1">Précédent</a>
+                            </li>
+                            <li class="page-item active">
+                                <a class="page-link" href="#">1</a>
+                            </li>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">Suivant</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglet Structure -->
+    <div class="tab-pane fade" id="structure">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Structure de la table {{ selectedTable }}</h5>
+            </div>
+            <div class="card-body">
+                {% if tableInfo is not empty %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Colonne</th>
+                                <th>Type</th>
+                                <th>Null</th>
+                                <th>Clé</th>
+                                <th>Défaut</th>
+                                <th>Extra</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for column in tableInfo %}
+                            <tr>
+                                <td><strong>{{ column.Field }}</strong></td>
+                                <td><span class="column-type">{{ column.Type }}</span></td>
+                                <td>
+                                    {% if column.Null == 'YES' %}
+                                        <span class="badge bg-warning">NULL</span>
+                                    {% else %}
+                                        <span class="badge bg-success">NOT NULL</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if column.Key == 'PRI' %}
+                                        <span class="badge bg-primary">PRIMARY</span>
+                                    {% elseif column.Key == 'UNI' %}
+                                        <span class="badge bg-info">UNIQUE</span>
+                                    {% elseif column.Key == 'MUL' %}
+                                        <span class="badge bg-secondary">INDEX</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ column.Default ?: '-' }}</td>
+                                <td>{{ column.Extra ?: '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Onglet Schéma -->
+    <div class="tab-pane fade" id="schema">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Schéma visuel de la table {{ selectedTable }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="schema-diagram" id="schemaDiagram">
+                    <div class="text-center">
+                        <i class="bi bi-diagram-3 text-muted" style="font-size: 4rem;"></i>
+                        <p class="text-muted mt-3">Le diagramme de schéma sera affiché ici</p>
+                        <p class="text-muted">Cette fonctionnalité nécessite une implémentation avancée de visualisation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            {% if selectedTable and tableData is not empty %}
+            // Initialize DataTable with advanced features
+            $('#dataTable').DataTable({
+                pageLength: 20,
+                searching: false, // We have custom search
+                ordering: false,  // We have custom sorting
+                scrollX: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+                }
+            });
+            {% endif %}
+        });
+        
+        function selectTable(tableName) {
+            if (tableName) {
+                window.location.href = '{{ path("admin_database_test_table_explorer") }}/' + tableName;
+            } else {
+                window.location.href = '{{ path("admin_database_test_table_explorer") }}';
+            }
+        }
+        
+        function refreshTableData() {
+            {% if selectedTable %}
+            fetch('{{ path("admin_database_test_api_table_data", {"tableName": selectedTable}) }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Reload the page with fresh data
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error refreshing table data:', error);
+                    alert('Erreur lors de l\'actualisation des données');
+                });
+            {% endif %}
+        }
+        
+        function exportTableData() {
+            {% if selectedTable %}
+            // Implement export functionality
+            alert('Fonctionnalité d\'export en cours de développement');
+            {% endif %}
+        }
+        
+        function filterTableData() {
+            const searchTerm = document.getElementById('searchData').value.toLowerCase();
+            const table = document.getElementById('dataTable');
+            
+            if (!table) return;
+            
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let showRow = false;
+                
+                for (let j = 0; j < cells.length; j++) {
+                    const cellText = cells[j].textContent || cells[j].innerText;
+                    if (cellText.toLowerCase().includes(searchTerm)) {
+                        showRow = true;
+                        break;
+                    }
+                }
+                
+                row.style.display = showRow ? '' : 'none';
+            }
+        }
+        
+        function sortByColumn(columnName) {
+            // Implement sorting functionality
+            console.log('Sorting by column:', columnName);
+        }
+        
+        function showTableStructure() {
+            document.getElementById('structure-tab').click();
+        }
+        
+        function showTableIndexes() {
+            alert('Informations sur les index en cours de développement');
+        }
+        
+        function showTableRelations() {
+            alert('Visualisation des relations en cours de développement');
+        }
+    </script>
+{% endblock %}

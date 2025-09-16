@@ -1,0 +1,735 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Moniteur d'Activité{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .activity-stream {
+            max-height: 600px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+        
+        .activity-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .activity-item.operation-SELECT {
+            border-left-color: #10ac84;
+        }
+        
+        .activity-item.operation-INSERT {
+            border-left-color: #3742fa;
+        }
+        
+        .activity-item.operation-UPDATE {
+            border-left-color: #ffa502;
+        }
+        
+        .activity-item.operation-DELETE {
+            border-left-color: #ff6b6b;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .realtime-indicator {
+            width: 12px;
+            height: 12px;
+            background: #10ac84;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .realtime-indicator.disconnected {
+            background: #ff6b6b;
+            animation: none;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .filters-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .connection-status {
+            background: #10ac84;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .connection-status.disconnected {
+            background: #ff6b6b;
+        }
+        
+        .query-details {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-top: 0.5rem;
+        }
+        
+        .execution-time {
+            background: rgba(0,0,0,0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .alert-panel {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-item {
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .alert-item.warning {
+            background: #fffbf0;
+            border-left: 4px solid #ffa502;
+        }
+        
+        .alert-item.error {
+            background: #fff5f5;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .performance-meter {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .performance-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10ac84, #ffa502, #ff6b6b);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-activity me-2"></i>Moniteur d'Activité
+        <span class="realtime-indicator" id="connectionIndicator"></span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ path('admin_database_test_index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+            <button type="button" class="btn btn-sm btn-success" onclick="toggleMonitoring()" id="monitoringBtn">
+                <i class="bi bi-pause-fill me-1"></i>Pause
+            </button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="clearActivity()">
+                <i class="bi bi-trash me-1"></i>Effacer
+            </button>
+        </div>
+        <div class="connection-status" id="connectionStatus">
+            <span class="realtime-indicator me-2"></span>
+            Connecté - Temps réel actif
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques en temps réel -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value" id="totalQueries">0</div>
+        <div class="stat-label">Requêtes Total</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="queriesPerSecond">0</div>
+        <div class="stat-label">Requêtes/Sec</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="avgResponseTime">0ms</div>
+        <div class="stat-label">Temps Moyen</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="activeConnections">1</div>
+        <div class="stat-label">Connexions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="errorRate">0%</div>
+        <div class="stat-label">Taux d'Erreur</div>
+    </div>
+</div>
+
+<!-- Graphiques de performance -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-graph-up me-2"></i>Activité des Requêtes (Temps Réel)
+            </h5>
+            <canvas id="activityChart" style="height: 300px;"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-pie-chart me-2"></i>Types d'Opérations
+            </h5>
+            <canvas id="operationChart" style="height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes et Performance -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="alert-panel">
+            <h5 class="mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>Alertes Système
+            </h5>
+            <div id="systemAlerts">
+                <p class="text-muted text-center">Aucune alerte active</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="chart-container">
+            <h5 class="mb-3">
+                <i class="bi bi-speedometer2 me-2"></i>Performance Base de Données
+            </h5>
+            <div class="mb-3">
+                <label class="form-label">CPU Usage</label>
+                <div class="performance-meter">
+                    <div class="performance-bar" id="cpuBar" style="width: 15%;"></div>
+                </div>
+                <small class="text-muted">15%</small>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Memory Usage</label>
+                <div class="performance-meter">
+                    <div class="performance-bar" id="memoryBar" style="width: 32%;"></div>
+                </div>
+                <small class="text-muted">32%</small>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Connection Pool</label>
+                <div class="performance-meter">
+                    <div class="performance-bar" id="connectionBar" style="width: 8%;"></div>
+                </div>
+                <small class="text-muted">8% (4/50)</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres et contrôles -->
+<div class="filters-panel">
+    <div class="row align-items-center">
+        <div class="col-md-3">
+            <label class="form-label">Opération</label>
+            <select class="form-select form-select-sm" id="operationFilter" onchange="applyFilters()">
+                <option value="">Toutes</option>
+                <option value="SELECT">SELECT</option>
+                <option value="INSERT">INSERT</option>
+                <option value="UPDATE">UPDATE</option>
+                <option value="DELETE">DELETE</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Table</label>
+            <select class="form-select form-select-sm" id="tableFilter" onchange="applyFilters()">
+                <option value="">Toutes</option>
+                <option value="utilisateur">utilisateur</option>
+                <option value="produit">produit</option>
+                <option value="commande">commande</option>
+                <option value="categorie">categorie</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Durée min.</label>
+            <input type="number" class="form-control form-control-sm" id="durationFilter" 
+                   placeholder="ms" onchange="applyFilters()">
+        </div>
+        <div class="col-md-3">
+            <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" id="autoScroll" checked>
+                <label class="form-check-label" for="autoScroll">
+                    Auto-scroll
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flux d'activité en temps réel -->
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>Flux d'Activité en Temps Réel
+                </h5>
+            </div>
+            <div class="col-auto">
+                <small class="text-muted">Dernière mise à jour: <span id="lastUpdate">{{ "now"|date('H:i:s') }}</span></small>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="activity-stream" id="activityStream">
+            <!-- Les activités apparaîtront ici en temps réel -->
+            <div class="text-center p-4">
+                <i class="bi bi-activity text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">En attente d'activité de base de données...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        let isMonitoring = true;
+        let activityChart;
+        let operationChart;
+        let activities = [];
+        let stats = {
+            totalQueries: 0,
+            queriesPerSecond: 0,
+            avgResponseTime: 0,
+            activeConnections: 1,
+            errorRate: 0,
+            operationCounts: {SELECT: 0, INSERT: 0, UPDATE: 0, DELETE: 0}
+        };
+        
+        $(document).ready(function() {
+            initializeCharts();
+            startRealTimeMonitoring();
+            simulateActivity(); // For demonstration
+        });
+        
+        function initializeCharts() {
+            // Activity timeline chart
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Requêtes/minute',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Operations pie chart
+            const operationCtx = document.getElementById('operationChart').getContext('2d');
+            operationChart = new Chart(operationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            '#10ac84',
+                            '#3742fa',
+                            '#ffa502',
+                            '#ff6b6b'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function startRealTimeMonitoring() {
+            // Update charts every 5 seconds
+            setInterval(() => {
+                if (isMonitoring) {
+                    updateCharts();
+                    updateStats();
+                    checkAlerts();
+                    updateLastUpdate();
+                }
+            }, 5000);
+            
+            // Update performance meters
+            setInterval(() => {
+                updatePerformanceMeters();
+            }, 2000);
+        }
+        
+        function simulateActivity() {
+            if (!isMonitoring) return;
+            
+            // Simulate random database activity
+            const operations = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'];
+            const tables = ['utilisateur', 'produit', 'commande', 'categorie', 'panier'];
+            
+            const randomActivity = () => {
+                if (Math.random() > 0.3) { // 70% chance of activity
+                    const operation = operations[Math.floor(Math.random() * operations.length)];
+                    const table = tables[Math.floor(Math.random() * tables.length)];
+                    const duration = Math.floor(Math.random() * 500) + 10; // 10-510ms
+                    const affected = Math.floor(Math.random() * 10) + 1;
+                    
+                    addActivity(operation, table, duration, affected);
+                }
+                
+                setTimeout(randomActivity, Math.random() * 3000 + 1000); // 1-4 seconds
+            };
+            
+            randomActivity();
+        }
+        
+        function addActivity(operation, table, duration, affectedRows = 1, error = null) {
+            const activity = {
+                id: Date.now(),
+                operation: operation,
+                table: table,
+                duration: duration,
+                affectedRows: affectedRows,
+                timestamp: new Date(),
+                error: error
+            };
+            
+            activities.unshift(activity);
+            if (activities.length > 100) {
+                activities = activities.slice(0, 100);
+            }
+            
+            updateActivityStream();
+            updateStatistics(activity);
+        }
+        
+        function updateActivityStream() {
+            const stream = document.getElementById('activityStream');
+            const filteredActivities = applyCurrentFilters();
+            
+            if (filteredActivities.length === 0) {
+                stream.innerHTML = `
+                    <div class="text-center p-4">
+                        <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Aucune activité correspondant aux filtres</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filteredActivities.slice(0, 50).forEach(activity => {
+                const statusIcon = activity.error ? 'exclamation-triangle text-danger' : 'check-circle text-success';
+                const operationColor = {
+                    SELECT: 'success',
+                    INSERT: 'primary', 
+                    UPDATE: 'warning',
+                    DELETE: 'danger'
+                }[activity.operation] || 'secondary';
+                
+                html += `
+                    <div class="activity-item operation-${activity.operation}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <i class="bi bi-${statusIcon} me-2"></i>
+                                <span class="badge bg-${operationColor}">${activity.operation}</span>
+                                <strong class="ms-2">${activity.table}</strong>
+                                <small class="text-muted ms-2">${activity.timestamp.toLocaleTimeString()}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="execution-time">${activity.duration}ms</span>
+                                ${activity.affectedRows > 0 ? `<span class="badge bg-secondary ms-2">${activity.affectedRows} row(s)</span>` : ''}
+                            </div>
+                        </div>
+                        ${activity.error ? `<div class="query-details text-danger mt-2">Error: ${activity.error}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            stream.innerHTML = html;
+            
+            // Auto-scroll if enabled
+            if (document.getElementById('autoScroll').checked) {
+                stream.scrollTop = 0;
+            }
+        }
+        
+        function updateStatistics(activity) {
+            stats.totalQueries++;
+            stats.operationCounts[activity.operation]++;
+            
+            // Calculate average response time
+            const allDurations = activities.map(a => a.duration);
+            stats.avgResponseTime = Math.round(allDurations.reduce((a, b) => a + b, 0) / allDurations.length);
+            
+            // Calculate queries per second (approximate)
+            const recentActivities = activities.filter(a => 
+                Date.now() - a.timestamp.getTime() < 60000 // Last minute
+            );
+            stats.queriesPerSecond = Math.round((recentActivities.length / 60) * 10) / 10;
+            
+            // Calculate error rate
+            const errors = activities.filter(a => a.error).length;
+            stats.errorRate = Math.round((errors / activities.length) * 100);
+        }
+        
+        function updateStats() {
+            document.getElementById('totalQueries').textContent = stats.totalQueries;
+            document.getElementById('queriesPerSecond').textContent = stats.queriesPerSecond;
+            document.getElementById('avgResponseTime').textContent = stats.avgResponseTime + 'ms';
+            document.getElementById('activeConnections').textContent = stats.activeConnections;
+            document.getElementById('errorRate').textContent = stats.errorRate + '%';
+        }
+        
+        function updateCharts() {
+            // Update activity chart
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString();
+            
+            activityChart.data.labels.push(timeLabel);
+            const recentCount = activities.filter(a => 
+                now.getTime() - a.timestamp.getTime() < 60000
+            ).length;
+            activityChart.data.datasets[0].data.push(recentCount);
+            
+            // Keep only last 20 points
+            if (activityChart.data.labels.length > 20) {
+                activityChart.data.labels.shift();
+                activityChart.data.datasets[0].data.shift();
+            }
+            
+            activityChart.update('none');
+            
+            // Update operations chart
+            operationChart.data.datasets[0].data = [
+                stats.operationCounts.SELECT,
+                stats.operationCounts.INSERT,
+                stats.operationCounts.UPDATE,
+                stats.operationCounts.DELETE
+            ];
+            operationChart.update('none');
+        }
+        
+        function updatePerformanceMeters() {
+            // Simulate performance data
+            const cpu = Math.random() * 30 + 10; // 10-40%
+            const memory = Math.random() * 40 + 20; // 20-60%
+            const connections = Math.random() * 20 + 5; // 5-25%
+            
+            document.getElementById('cpuBar').style.width = cpu + '%';
+            document.getElementById('memoryBar').style.width = memory + '%';
+            document.getElementById('connectionBar').style.width = connections + '%';
+            
+            // Update text
+            document.querySelector('#cpuBar').parentElement.nextElementSibling.textContent = Math.round(cpu) + '%';
+            document.querySelector('#memoryBar').parentElement.nextElementSibling.textContent = Math.round(memory) + '%';
+            document.querySelector('#connectionBar').parentElement.nextElementSibling.textContent = 
+                Math.round(connections) + '% (' + Math.round(connections/2) + '/50)';
+        }
+        
+        function checkAlerts() {
+            const alertsDiv = document.getElementById('systemAlerts');
+            let alerts = [];
+            
+            // Check for slow queries
+            const slowQueries = activities.filter(a => a.duration > 1000).length;
+            if (slowQueries > 0) {
+                alerts.push({
+                    type: 'warning',
+                    message: `${slowQueries} requête(s) lente(s) détectée(s) (>1s)`
+                });
+            }
+            
+            // Check error rate
+            if (stats.errorRate > 5) {
+                alerts.push({
+                    type: 'error',
+                    message: `Taux d'erreur élevé: ${stats.errorRate}%`
+                });
+            }
+            
+            // Check query volume
+            if (stats.queriesPerSecond > 10) {
+                alerts.push({
+                    type: 'warning',
+                    message: `Volume élevé de requêtes: ${stats.queriesPerSecond}/sec`
+                });
+            }
+            
+            if (alerts.length === 0) {
+                alertsDiv.innerHTML = '<p class="text-muted text-center">Aucune alerte active</p>';
+            } else {
+                let html = '';
+                alerts.forEach(alert => {
+                    html += `
+                        <div class="alert-item ${alert.type}">
+                            <i class="bi bi-${alert.type === 'error' ? 'exclamation-triangle' : 'exclamation-circle'} me-2"></i>
+                            ${alert.message}
+                        </div>
+                    `;
+                });
+                alertsDiv.innerHTML = html;
+            }
+        }
+        
+        function toggleMonitoring() {
+            isMonitoring = !isMonitoring;
+            const btn = document.getElementById('monitoringBtn');
+            const indicator = document.getElementById('connectionIndicator');
+            const status = document.getElementById('connectionStatus');
+            
+            if (isMonitoring) {
+                btn.innerHTML = '<i class="bi bi-pause-fill me-1"></i>Pause';
+                btn.className = 'btn btn-sm btn-success';
+                indicator.classList.remove('disconnected');
+                status.innerHTML = '<span class="realtime-indicator me-2"></span>Connecté - Temps réel actif';
+                status.classList.remove('disconnected');
+            } else {
+                btn.innerHTML = '<i class="bi bi-play-fill me-1"></i>Reprendre';
+                btn.className = 'btn btn-sm btn-warning';
+                indicator.classList.add('disconnected');
+                status.innerHTML = '<span class="realtime-indicator disconnected me-2"></span>Monitoring en pause';
+                status.classList.add('disconnected');
+            }
+        }
+        
+        function clearActivity() {
+            if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique d\'activité?')) {
+                activities = [];
+                stats = {
+                    totalQueries: 0,
+                    queriesPerSecond: 0,
+                    avgResponseTime: 0,
+                    activeConnections: 1,
+                    errorRate: 0,
+                    operationCounts: {SELECT: 0, INSERT: 0, UPDATE: 0, DELETE: 0}
+                };
+                updateActivityStream();
+                updateStats();
+                updateCharts();
+            }
+        }
+        
+        function applyFilters() {
+            updateActivityStream();
+        }
+        
+        function applyCurrentFilters() {
+            const operationFilter = document.getElementById('operationFilter').value;
+            const tableFilter = document.getElementById('tableFilter').value;
+            const durationFilter = parseInt(document.getElementById('durationFilter').value) || 0;
+            
+            return activities.filter(activity => {
+                if (operationFilter && activity.operation !== operationFilter) return false;
+                if (tableFilter && activity.table !== tableFilter) return false;
+                if (durationFilter && activity.duration < durationFilter) return false;
+                return true;
+            });
+        }
+        
+        function updateLastUpdate() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+    </script>
+{% endblock %}

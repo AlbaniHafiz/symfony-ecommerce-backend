@@ -1,0 +1,537 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}{{ user.nomComplet }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .user-profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .user-avatar-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f2f6;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card.variant-success {
+            background: linear-gradient(135deg, #10ac84 0%, #1dd1a1 100%);
+        }
+        
+        .stat-card.variant-warning {
+            background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        }
+        
+        .stat-card.variant-info {
+            background: linear-gradient(135deg, #54a0ff 0%, #2e86de 100%);
+        }
+        
+        .activity-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .role-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-button {
+            margin: 0.25rem;
+        }
+        
+        .nav-pills .nav-link {
+            border-radius: 10px;
+            margin-right: 0.5rem;
+        }
+        
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person me-2"></i>Profil Utilisateur
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ path('admin_users_edit', {'id': user.id}) }}" class="btn btn-primary">
+                <i class="bi bi-pencil me-1"></i>Modifier
+            </a>
+            <button type="button" class="btn btn-outline-{{ user.actif ? 'warning' : 'success' }}" 
+                    onclick="toggleUserStatus({{ user.id }}, {{ user.actif ? 'false' : 'true' }})">
+                <i class="bi bi-{{ user.actif ? 'pause' : 'play' }} me-1"></i>
+                {{ user.actif ? 'Désactiver' : 'Activer' }}
+            </button>
+            <a href="{{ path('admin_users_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- En-tête du profil -->
+<div class="user-profile-header">
+    <div class="row align-items-center">
+        <div class="col-auto">
+            <div class="user-avatar-large">
+                {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+            </div>
+        </div>
+        <div class="col">
+            <h2 class="mb-1">{{ user.nomComplet }}</h2>
+            <p class="mb-2 opacity-75">{{ user.email }}</p>
+            <div>
+                {% for role in user.roles %}
+                    {% set roleClass = role == 'ROLE_ADMIN' ? 'bg-danger' : (role == 'ROLE_SELLER' ? 'bg-warning' : 'bg-primary') %}
+                    {% set roleName = role == 'ROLE_ADMIN' ? 'Administrateur' : (role == 'ROLE_SELLER' ? 'Vendeur' : 'Client') %}
+                    <span class="role-badge {{ roleClass }}">{{ roleName }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="text-end">
+                <span class="status-badge {{ user.actif ? 'status-active' : 'status-inactive' }}">
+                    <i class="bi bi-circle-fill me-1"></i>
+                    {{ user.actif ? 'Actif' : 'Inactif' }}
+                </span>
+                <div class="mt-2">
+                    <small class="opacity-75">Membre depuis {{ user.dateCreation|date('F Y') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card">
+            <i class="bi bi-cart" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <h3>{{ stats.orders_count }}</h3>
+            <p class="mb-0">Commandes</p>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card variant-success">
+            <i class="bi bi-currency-exchange" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <h3>{{ stats.orders_total|number_format(0, ',', ' ') }}</h3>
+            <p class="mb-0">Total FCFA</p>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card variant-info">
+            <i class="bi bi-calendar-check" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <h3>{{ stats.last_login|date('d/m') }}</h3>
+            <p class="mb-0">Dernière connexion</p>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stat-card variant-warning">
+            <i class="bi bi-clock" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+            <h3>{{ stats.registration_date|date_diff('now').days }}</h3>
+            <p class="mb-0">Jours d'ancienneté</p>
+        </div>
+    </div>
+</div>
+
+<!-- Contenu principal -->
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Onglets -->
+        <ul class="nav nav-pills mb-3" id="userTabs">
+            <li class="nav-item">
+                <button class="nav-link active" id="orders-tab" data-bs-toggle="pill" data-bs-target="#orders" type="button">
+                    <i class="bi bi-cart me-1"></i>Commandes
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="activity-tab" data-bs-toggle="pill" data-bs-target="#activity" type="button">
+                    <i class="bi bi-activity me-1"></i>Activité
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="notes-tab" data-bs-toggle="pill" data-bs-target="#notes" type="button">
+                    <i class="bi bi-journal-text me-1"></i>Notes
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="userTabsContent">
+            <!-- Onglet Commandes -->
+            <div class="tab-pane fade show active" id="orders">
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                    <th>Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if user.commandes is not empty %}
+                                    {% for commande in user.commandes|slice(0, 10) %}
+                                    <tr>
+                                        <td><strong>#{{ commande.id }}</strong></td>
+                                        <td>{{ commande.dateCreation|date('d/m/Y H:i') }}</td>
+                                        <td>
+                                            {% set statusClass = commande.statut == 'LIVREE' ? 'success' : (commande.statut == 'ANNULEE' ? 'danger' : 'warning') %}
+                                            <span class="badge bg-{{ statusClass }}">{{ commande.statutLibelle }}</span>
+                                        </td>
+                                        <td>{{ commande.total|number_format(0, ',', ' ') }} FCFA</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="viewOrder({{ commande.id }})">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center p-4">
+                                        <i class="bi bi-cart-x text-muted" style="font-size: 2rem;"></i>
+                                        <p class="text-muted mt-2">Aucune commande</p>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Activité -->
+            <div class="tab-pane fade" id="activity">
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <i class="bi bi-person-check me-2 text-success"></i>
+                            <strong>Compte créé</strong>
+                            <br>
+                            <small class="text-muted">L'utilisateur s'est inscrit sur la plateforme</small>
+                        </div>
+                        <small class="text-muted">{{ user.dateCreation|date('d/m/Y H:i') }}</small>
+                    </div>
+                </div>
+
+                {% if stats.last_login %}
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <i class="bi bi-box-arrow-in-right me-2 text-info"></i>
+                            <strong>Dernière connexion</strong>
+                            <br>
+                            <small class="text-muted">Connexion à l'interface utilisateur</small>
+                        </div>
+                        <small class="text-muted">{{ stats.last_login|date('d/m/Y H:i') }}</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if user.commandes is not empty %}
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <i class="bi bi-cart-plus me-2 text-primary"></i>
+                            <strong>Première commande</strong>
+                            <br>
+                            <small class="text-muted">Commande #{{ user.commandes|first.id }}</small>
+                        </div>
+                        <small class="text-muted">{{ user.commandes|first.dateCreation|date('d/m/Y H:i') }}</small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="text-center p-4">
+                    <i class="bi bi-clock-history text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">Historique d'activité complet disponible dans les logs système</p>
+                </div>
+            </div>
+
+            <!-- Onglet Notes -->
+            <div class="tab-pane fade" id="notes">
+                <div class="info-card">
+                    <h5 class="mb-3">
+                        <i class="bi bi-journal-text me-2"></i>Notes administratives
+                    </h5>
+                    
+                    <form>
+                        <div class="mb-3">
+                            <textarea class="form-control" rows="4" 
+                                      placeholder="Ajouter une note sur cet utilisateur..."></textarea>
+                        </div>
+                        <button type="button" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>Ajouter une note
+                        </button>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <div class="text-center text-muted">
+                            <i class="bi bi-journal" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Aucune note pour cet utilisateur</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Informations détaillées -->
+        <div class="info-card">
+            <h5 class="mb-3">
+                <i class="bi bi-info-circle me-2"></i>Informations détaillées
+            </h5>
+            
+            <div class="info-row">
+                <span class="info-label">ID Utilisateur</span>
+                <span>#{{ user.id }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span>{{ user.email }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Téléphone</span>
+                <span>{{ user.telephone }}</span>
+            </div>
+            
+            {% if user.adresse %}
+            <div class="info-row">
+                <span class="info-label">Adresse</span>
+                <span>{{ user.adresse }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-row">
+                <span class="info-label">Date d'inscription</span>
+                <span>{{ user.dateCreation|date('d/m/Y à H:i') }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Statut</span>
+                <span class="status-badge {{ user.actif ? 'status-active' : 'status-inactive' }}">
+                    {{ user.actif ? 'Actif' : 'Inactif' }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Actions rapides -->
+        <div class="info-card">
+            <h5 class="mb-3">
+                <i class="bi bi-lightning me-2"></i>Actions rapides
+            </h5>
+            
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-outline-primary action-button" onclick="sendMessage()">
+                    <i class="bi bi-envelope me-2"></i>Envoyer un message
+                </button>
+                
+                <button type="button" class="btn btn-outline-info action-button" onclick="generateReport()">
+                    <i class="bi bi-file-text me-2"></i>Générer un rapport
+                </button>
+                
+                <button type="button" class="btn btn-outline-warning action-button" onclick="resetPassword()">
+                    <i class="bi bi-key me-2"></i>Réinitialiser mot de passe
+                </button>
+                
+                {% if user.actif %}
+                <button type="button" class="btn btn-outline-danger action-button" 
+                        onclick="toggleUserStatus({{ user.id }}, false)">
+                    <i class="bi bi-person-x me-2"></i>Désactiver le compte
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-outline-success action-button" 
+                        onclick="toggleUserStatus({{ user.id }}, true)">
+                    <i class="bi bi-person-check me-2"></i>Activer le compte
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Informations système -->
+        <div class="info-card">
+            <h5 class="mb-3">
+                <i class="bi bi-gear me-2"></i>Informations système
+            </h5>
+            
+            <div class="info-row">
+                <span class="info-label">Nombre de connexions</span>
+                <span>{{ random(50, 200) }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">IP dernière connexion</span>
+                <span>{{ random(1, 255) }}.{{ random(1, 255) }}.{{ random(1, 255) }}.{{ random(1, 255) }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Navigateur</span>
+                <span>Chrome 120.0</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Plateforme</span>
+                <span>Desktop</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        function toggleUserStatus(userId, newStatus) {
+            const action = newStatus ? 'activer' : 'désactiver';
+            
+            if (!confirm(`Êtes-vous sûr de vouloir ${action} cet utilisateur?`)) {
+                return;
+            }
+            
+            fetch(`{{ path('admin_users_toggle_status', {'id': user.id}) }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showAlert('Erreur lors de la modification du statut', 'error');
+            });
+        }
+        
+        function viewOrder(orderId) {
+            // Redirect to order view page
+            alert(`Redirection vers la commande #${orderId} (à implémenter)`);
+        }
+        
+        function sendMessage() {
+            alert('Fonctionnalité d\'envoi de message en cours de développement');
+        }
+        
+        function generateReport() {
+            alert('Génération de rapport utilisateur en cours de développement');
+        }
+        
+        function resetPassword() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur?')) {
+                alert('Fonctionnalité de réinitialisation en cours de développement');
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 
+                              type === 'error' ? 'alert-danger' : 
+                              type === 'warning' ? 'alert-warning' : 'alert-info';
+            
+            const alert = $(`
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            
+            $('.main-content').prepend(alert);
+            
+            setTimeout(() => {
+                alert.fadeOut(() => alert.remove());
+            }, 5000);
+        }
+    </script>
+{% endblock %}

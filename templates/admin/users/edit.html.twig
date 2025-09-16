@@ -1,0 +1,580 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Modifier {{ user.nomComplet }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .form-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+        }
+        
+        .btn-outline-secondary {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+        }
+        
+        .role-checkbox {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .role-checkbox:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .role-checkbox input:checked ~ .role-info {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .user-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .danger-zone {
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 1.5rem;
+            background: #fff5f5;
+        }
+        
+        .password-field {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person-gear me-2"></i>Modifier l'Utilisateur
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ path('admin_users_view', {'id': user.id}) }}" class="btn btn-outline-info">
+                <i class="bi bi-eye me-1"></i>Voir le profil
+            </a>
+            <a href="{{ path('admin_users_index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- En-tête utilisateur -->
+<div class="user-header">
+    <div class="row align-items-center">
+        <div class="col-auto">
+            <div class="user-avatar">
+                {{ user.prenom|first|upper }}{{ user.nom|first|upper }}
+            </div>
+        </div>
+        <div class="col">
+            <h4 class="mb-1">{{ user.nomComplet }}</h4>
+            <p class="mb-0 opacity-75">{{ user.email }} • Membre depuis {{ user.dateCreation|date('F Y') }}</p>
+        </div>
+        <div class="col-auto">
+            <span class="badge {{ user.actif ? 'bg-success' : 'bg-danger' }} p-2">
+                <i class="bi bi-circle-fill me-1"></i>
+                {{ user.actif ? 'Actif' : 'Inactif' }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="editUserForm">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Informations personnelles -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="bi bi-person me-2"></i>Informations Personnelles
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="prenom" class="form-label">Prénom *</label>
+                            <input type="text" class="form-control" id="prenom" name="prenom" 
+                                   value="{{ user.prenom }}" required>
+                            <div class="invalid-feedback">
+                                Le prénom est obligatoire.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="nom" class="form-label">Nom *</label>
+                            <input type="text" class="form-control" id="nom" name="nom" 
+                                   value="{{ user.nom }}" required>
+                            <div class="invalid-feedback">
+                                Le nom est obligatoire.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Adresse Email *</label>
+                    <input type="email" class="form-control" id="email" name="email" 
+                           value="{{ user.email }}" required>
+                    <div class="invalid-feedback">
+                        Une adresse email valide est requise.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="telephone" class="form-label">Téléphone *</label>
+                    <input type="tel" class="form-control" id="telephone" name="telephone" 
+                           value="{{ user.telephone }}" required>
+                    <div class="invalid-feedback">
+                        Le numéro de téléphone est obligatoire.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="adresse" class="form-label">Adresse</label>
+                    <textarea class="form-control" id="adresse" name="adresse" rows="3">{{ user.adresse }}</textarea>
+                </div>
+            </div>
+            
+            <!-- Sécurité -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="bi bi-shield-lock me-2"></i>Sécurité
+                </h4>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Laissez les champs de mot de passe vides si vous ne souhaitez pas le modifier.
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Nouveau mot de passe</label>
+                    <div class="password-field">
+                        <input type="password" class="form-control" id="password" name="password" 
+                               minlength="8" placeholder="Laissez vide pour ne pas modifier">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <small class="form-text text-muted">
+                        Minimum 8 caractères. Utilisez une combinaison de lettres, chiffres et symboles.
+                    </small>
+                    <div class="invalid-feedback">
+                        Le mot de passe doit contenir au moins 8 caractères.
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password_confirm" class="form-label">Confirmer le nouveau mot de passe</label>
+                    <div class="password-field">
+                        <input type="password" class="form-control" id="password_confirm" name="password_confirm"
+                               placeholder="Confirmez le nouveau mot de passe">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password_confirm')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    <div class="invalid-feedback">
+                        Les mots de passe ne correspondent pas.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Rôles et permissions -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="bi bi-person-badge me-2"></i>Rôles et Permissions
+                </h4>
+                
+                <div class="role-checkbox">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="ROLE_ETUDIANT" 
+                               id="role_client" name="roles[]" 
+                               {{ 'ROLE_ETUDIANT' in user.roles ? 'checked' : '' }}>
+                        <label class="form-check-label role-info" for="role_client">
+                            <strong>Client</strong>
+                            <br>
+                            <small class="text-muted">Peut passer des commandes et gérer son profil</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="role-checkbox">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="ROLE_SELLER" 
+                               id="role_seller" name="roles[]"
+                               {{ 'ROLE_SELLER' in user.roles ? 'checked' : '' }}>
+                        <label class="form-check-label role-info" for="role_seller">
+                            <strong>Vendeur</strong>
+                            <br>
+                            <small class="text-muted">Peut gérer ses produits et commandes</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="role-checkbox">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="ROLE_ADMIN" 
+                               id="role_admin" name="roles[]"
+                               {{ 'ROLE_ADMIN' in user.roles ? 'checked' : '' }}>
+                        <label class="form-check-label role-info" for="role_admin">
+                            <strong>Administrateur</strong>
+                            <br>
+                            <small class="text-muted">Accès complet à l'administration</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="role-checkbox">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="ROLE_LIVREUR" 
+                               id="role_livreur" name="roles[]"
+                               {{ 'ROLE_LIVREUR' in user.roles ? 'checked' : '' }}>
+                        <label class="form-check-label role-info" for="role_livreur">
+                            <strong>Livreur</strong>
+                            <br>
+                            <small class="text-muted">Peut gérer les livraisons</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statut -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="bi bi-toggles me-2"></i>Statut du Compte
+                </h4>
+                
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="actif" name="actif" value="1"
+                           {{ user.actif ? 'checked' : '' }}>
+                    <label class="form-check-label" for="actif">
+                        <strong>Compte actif</strong>
+                        <br>
+                        <small class="text-muted">L'utilisateur peut se connecter et utiliser la plateforme</small>
+                    </label>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        La désactivation empêchera l'utilisateur de se connecter
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="form-section">
+                <h4 class="section-title">
+                    <i class="bi bi-check2-square me-2"></i>Actions
+                </h4>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>Enregistrer les modifications
+                    </button>
+                    <a href="{{ path('admin_users_view', {'id': user.id}) }}" class="btn btn-outline-info">
+                        <i class="bi bi-eye me-2"></i>Voir le profil
+                    </a>
+                    <a href="{{ path('admin_users_index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>Annuler
+                    </a>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="send_notification" name="send_notification">
+                        <label class="form-check-label" for="send_notification">
+                            Notifier l'utilisateur des modifications
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Zone dangereuse -->
+            <div class="danger-zone">
+                <h5 class="text-danger mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Zone dangereuse
+                </h5>
+                
+                <p class="small text-muted mb-3">
+                    Ces actions sont irréversibles. Procédez avec prudence.
+                </p>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="resetUserPassword()">
+                        <i class="bi bi-key me-1"></i>Réinitialiser le mot de passe
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteUserAccount()">
+                        <i class="bi bi-person-x me-1"></i>Supprimer le compte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        $(document).ready(function() {
+            // Form validation
+            $('#editUserForm').on('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // Password confirmation validation
+            $('#password_confirm').on('keyup', function() {
+                validatePasswordConfirmation();
+            });
+            
+            // Email validation
+            $('#email').on('blur', function() {
+                validateEmail();
+            });
+            
+            // Role selection visual feedback
+            $('input[name="roles[]"]').on('change', function() {
+                updateRoleSelection();
+            });
+            
+            // Initialize role selection display
+            updateRoleSelection();
+        });
+        
+        function validateForm() {
+            let isValid = true;
+            
+            // Reset previous validation states
+            $('.form-control').removeClass('is-invalid is-valid');
+            
+            // Required fields validation
+            const requiredFields = ['prenom', 'nom', 'email', 'telephone'];
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field);
+                if (!element.value.trim()) {
+                    element.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    element.classList.add('is-valid');
+                }
+            });
+            
+            // Email validation
+            if (!validateEmail()) {
+                isValid = false;
+            }
+            
+            // Password validation (only if password is being changed)
+            const password = document.getElementById('password').value;
+            if (password && !validatePassword()) {
+                isValid = false;
+            }
+            
+            // Password confirmation validation (only if password is being changed)
+            if (password && !validatePasswordConfirmation()) {
+                isValid = false;
+            }
+            
+            // At least one role must be selected
+            const roleCheckboxes = document.querySelectorAll('input[name="roles[]"]');
+            const hasSelectedRole = Array.from(roleCheckboxes).some(cb => cb.checked);
+            if (!hasSelectedRole) {
+                showAlert('Veuillez sélectionner au moins un rôle pour l\'utilisateur.', 'warning');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function validateEmail() {
+            const email = document.getElementById('email');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailRegex.test(email.value)) {
+                email.classList.add('is-invalid');
+                email.classList.remove('is-valid');
+                return false;
+            }
+            
+            email.classList.add('is-valid');
+            email.classList.remove('is-invalid');
+            return true;
+        }
+        
+        function validatePassword() {
+            const password = document.getElementById('password');
+            
+            if (password.value && password.value.length < 8) {
+                password.classList.add('is-invalid');
+                password.classList.remove('is-valid');
+                return false;
+            }
+            
+            if (password.value) {
+                password.classList.add('is-valid');
+                password.classList.remove('is-invalid');
+            }
+            return true;
+        }
+        
+        function validatePasswordConfirmation() {
+            const password = document.getElementById('password');
+            const passwordConfirm = document.getElementById('password_confirm');
+            
+            if (password.value && password.value !== passwordConfirm.value) {
+                passwordConfirm.classList.add('is-invalid');
+                passwordConfirm.classList.remove('is-valid');
+                return false;
+            }
+            
+            if (password.value) {
+                passwordConfirm.classList.add('is-valid');
+                passwordConfirm.classList.remove('is-invalid');
+            }
+            return true;
+        }
+        
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const button = field.nextElementSibling;
+            const icon = button.querySelector('i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                field.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+        
+        function updateRoleSelection() {
+            $('input[name="roles[]"]').each(function() {
+                const roleInfo = $(this).siblings('.role-info');
+                if (this.checked) {
+                    roleInfo.addClass('text-primary').removeClass('text-muted');
+                    $(this).closest('.role-checkbox').addClass('border-primary');
+                } else {
+                    roleInfo.removeClass('text-primary').addClass('text-muted');
+                    $(this).closest('.role-checkbox').removeClass('border-primary');
+                }
+            });
+        }
+        
+        function resetUserPassword() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur? Un nouveau mot de passe temporaire sera généré et envoyé par email.')) {
+                // Implementation would go here
+                showAlert('Fonctionnalité de réinitialisation en cours de développement', 'info');
+            }
+        }
+        
+        function deleteUserAccount() {
+            const userName = '{{ user.nomComplet|e('js') }}';
+            if (confirm(`Êtes-vous sûr de vouloir supprimer définitivement le compte de ${userName}? Cette action est irréversible.`)) {
+                if (confirm('Dernière confirmation: Cette action supprimera toutes les données associées à cet utilisateur. Continuez?')) {
+                    // Implementation would go here
+                    showAlert('Fonctionnalité de suppression en cours de développement', 'info');
+                }
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 
+                              type === 'error' ? 'alert-danger' : 
+                              type === 'warning' ? 'alert-warning' : 'alert-info';
+            
+            const alert = $(`
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+            
+            $('.main-content').prepend(alert);
+            
+            setTimeout(() => {
+                alert.fadeOut(() => alert.remove());
+            }, 5000);
+        }
+    </script>
+{% endblock %}
